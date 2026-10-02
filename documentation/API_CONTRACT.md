@@ -211,12 +211,12 @@ results locally, so each one is optional for a first server version.
 
 ### Sync and backup
 
-| Method & path                                     | Purpose                                                                                                                                         |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /v1/sync?since=<timestamp>`                  | Every record changed after `since`, including ended habits and cleared-entry tombstones (`{ "id", "deletedAt" }`), plus a new `cursor`.         |
-| `POST /v1/sync`                                   | Push local changes as a batch. Each record is accepted or returned with a `conflict` and the server's copy, so the client can merge.            |
-| `GET /v1/export`                                  | The same JSON backup file as the app's planned local export: `{ "format": "dailyos-backup", "schemaVersion": 5, "exportedAt", "data": { … } }`. |
-| `POST /v1/import?mode=replace\|merge&dryRun=true` | Validate a backup and preview what would change; without `dryRun`, apply it. Invalid files are rejected as a whole.                             |
+| Method & path                                     | Purpose                                                                                                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /v1/sync?since=<timestamp>`                  | Every record changed after `since`, including ended habits and cleared-entry tombstones (`{ "id", "deletedAt" }`), plus a new `cursor`.                                                     |
+| `POST /v1/sync`                                   | Push local changes as a batch. Each record is accepted or returned with a `conflict` and the server's copy, so the client can merge.                                                        |
+| `GET /v1/export`                                  | The same JSON backup file the app downloads from Settings: `{ "format": "dailyos-backup", "schemaVersion": 5, "exportedAt", "data": { … } }`.                                               |
+| `POST /v1/import?mode=replace\|merge&dryRun=true` | Validate a backup and preview what would change; without `dryRun`, apply it. Invalid files are rejected as a whole. `merge` follows the app's "add what's new" rules (see ARCHITECTURE.md). |
 
 ## Not part of the API
 
