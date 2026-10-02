@@ -19,7 +19,20 @@
 | `pnpm format:check` | Verify formatting                                       |
 | `pnpm test`         | Run Vitest once                                         |
 | `pnpm test:watch`   | Vitest in watch mode                                    |
+| `pnpm test:e2e`     | Playwright browser tests against the production build   |
 | `pnpm check`        | All of the above in sequence. Must pass before a commit |
+
+## Tests
+
+- **Unit and component tests** (Vitest + React Testing Library + `fake-indexeddb`) live in
+  `tests/`. `tests/helpers/db.ts` resets the in-memory database before each test. Only the
+  fake database is ever deleted. `setNow()` freezes `Date` without faking timers, because
+  IndexedDB callbacks need real timers.
+- **Browser tests** (Playwright) live in `e2e/`. They build the app, serve it with
+  `vite preview`, and drive the locally installed **Google Chrome** (`channel: 'chrome'`) at an
+  iPhone 13 viewport. This is Chrome emulating the viewport, not Safari or WebKit, and not a
+  real iPhone. To use Playwright's bundled browsers instead, run `pnpm exec playwright install`
+  and remove `channel`.
 
 ## Testing on a phone
 

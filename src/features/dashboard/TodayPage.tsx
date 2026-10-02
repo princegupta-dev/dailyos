@@ -1,22 +1,25 @@
-import { BookOpen, CheckCircle2, Moon, Plus, Repeat, Settings, Target } from 'lucide-react';
+import { BookOpen, Moon, Plus, Repeat, Settings, Target } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
-import { FoundationNotice } from '@/components/FoundationNotice';
 import { PageHeader } from '@/components/PageHeader';
 import { Section } from '@/components/Section';
-import { useLocalDateKey } from '@/hooks/useLocalDateKey';
-import { formatDateKey, getDeviceTimeZone } from '@/lib/dates';
+import { useToday } from '@/hooks/useToday';
+import { formatDateKey } from '@/lib/dates';
+import { TodayTasks } from '../planning/TodayTasks';
+import { QuickCaptureDialog } from './QuickCaptureDialog';
 
 const OUTCOME_SLOTS = [1, 2, 3] as const;
 
 export function TodayPage() {
-  const dateKey = useLocalDateKey(getDeviceTimeZone());
+  const today = useToday();
+  const [capturing, setCapturing] = useState(false);
 
   return (
     <>
       <PageHeader
         eyebrow="Today"
-        title={formatDateKey(dateKey)}
+        title={formatDateKey(today)}
         actions={
           <Link to="/settings" className="icon-button" aria-label="Settings">
             <Settings size={20} aria-hidden="true" />
@@ -24,10 +27,14 @@ export function TodayPage() {
         }
       />
 
-      <FoundationNotice />
-
       <div className="today-capture">
-        <button type="button" className="button button--primary button--block" disabled>
+        <button
+          type="button"
+          className="button button--primary button--block"
+          onClick={() => {
+            setCapturing(true);
+          }}
+        >
           <Plus size={20} aria-hidden="true" />
           Quick capture
         </button>
@@ -37,7 +44,7 @@ export function TodayPage() {
         <EmptyState
           icon={Target}
           title="No intention yet"
-          description="A single sentence about how you want today to go."
+          description="Setting a daily intention is not available yet in this build."
         />
       </Section>
 
@@ -56,19 +63,13 @@ export function TodayPage() {
         </ol>
       </Section>
 
-      <Section title="Tasks">
-        <EmptyState
-          icon={CheckCircle2}
-          title="Nothing planned for today"
-          description="Tasks you plan for today and their progress will appear here."
-        />
-      </Section>
+      <TodayTasks today={today} />
 
       <Section title="Habits">
         <EmptyState
           icon={Repeat}
           title="No habits configured"
-          description="Habits scheduled for today will appear here once you set them up in Settings."
+          description="Habit tracking is not available yet in this build."
         />
       </Section>
 
@@ -76,7 +77,7 @@ export function TodayPage() {
         <EmptyState
           icon={BookOpen}
           title="No captures yet"
-          description="Your latest learning notes will appear here."
+          description="Learning capture is not available yet in this build."
         />
       </Section>
 
@@ -84,9 +85,18 @@ export function TodayPage() {
         <EmptyState
           icon={Moon}
           title="Reflect at the end of the day"
-          description="Compare what you planned with what happened, and choose what to carry forward."
+          description="Daily reviews are not available yet in this build."
         />
       </Section>
+
+      {capturing && (
+        <QuickCaptureDialog
+          today={today}
+          onClose={() => {
+            setCapturing(false);
+          }}
+        />
+      )}
     </>
   );
 }

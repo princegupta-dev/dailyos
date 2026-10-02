@@ -57,11 +57,39 @@ export function formatDateKey(
   locale?: string,
   options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' },
 ): string {
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(
+    parseDateKey(dateKey),
+  );
+}
+
+function parseDateKey(dateKey: string): Date {
   if (!isDateKey(dateKey)) {
     throw new RangeError(`Invalid date key: ${dateKey}`);
   }
   const [year, month, day] = dateKey.split('-').map(Number) as [number, number, number];
-  return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(
-    new Date(Date.UTC(year, month - 1, day)),
-  );
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function toDateKeyUTC(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Calendar arithmetic on date keys. Works on UTC midnight internally, where every day is
+ * exactly 24 hours, so local DST transitions cannot skew the result.
+ */
+export function addDays(dateKey: string, days: number): string {
+  const date = parseDateKey(dateKey);
+  date.setUTCDate(date.getUTCDate() + days);
+  return toDateKeyUTC(date);
+}
+
+/** Day of week for a date key: 0 = Sunday … 6 = Saturday. */
+export function weekdayOf(dateKey: string): number {
+  return parseDateKey(dateKey).getUTCDay();
+}
+
+/** Whole calendar days from `from` to `to` (negative when `to` is earlier). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((parseDateKey(to).getTime() - parseDateKey(from).getTime()) / 86_400_000);
 }

@@ -1,5 +1,7 @@
 # DailyOS
 
+The idea behind DailyOS is to create one personal operating system for how you plan, execute, learn, and improve. Instead of managing your tasks in one app, learning notes in another, and daily reflections somewhere else, you connect everything in one place.
+
 An iPhone-first, local-first personal learning and execution system.
 
 > Plan intentionally. Capture what you learn. Record what you do. Review honestly. Improve continuously.
@@ -9,8 +11,8 @@ Your records will live in your browser's IndexedDB, and you'll be able to export
 
 ## Status
 
-**Milestone 1 — Foundation.** The app shell, navigation, design tokens, and the Today dashboard
-layout are in place. Screens are layout-only and show a "Preview build" notice. Nothing is saved yet.
+Tasks and daily task planning work and are saved locally. Screens that aren't built yet say
+so explicitly.
 
 | Milestone                         | Status      |
 | --------------------------------- | ----------- |

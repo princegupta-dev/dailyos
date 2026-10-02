@@ -19,7 +19,21 @@ lib/*                                 pure helpers (dates, validation) usable by
 
 - **UI never touches IndexedDB directly.** An ESLint `no-restricted-imports` rule blocks `dexie`,
   `@/db/database`, and `@/db/schema` imports from `src/app`, `src/components`, and `src/features`.
-- `db/` and `services/` are created in Milestone 2, along with the first real data.
+- **Writes** go through repository functions (`src/db/repositories/*`). Each validates input with
+  Zod, runs related writes in one Dexie transaction, and throws an `AppError` with a `kind`
+  (`validation`, `not_found`, `invalid_operation`, `conflict`, `quota`, `unavailable`, `version`,
+  `unknown`) and field-level issues for forms.
+- **Reads** are plain async functions that the UI subscribes to with `useLiveData`, built on
+  Dexie `liveQuery`. They re-run automatically when the data they read changes, including
+  writes from other tabs.
+
+### Live-query pitfall
+
+Dexie tracks what a live query reads through an async context. That context is lost if a
+read awaits nested native `async` helpers and then reads again, so the query silently stops
+updating. Read functions therefore call Dexie directly, without wrappers, and take values like
+`today` as parameters instead of looking them up. `tests/db/live.test.ts` subscribes to every
+read used by the UI and fails if any of them stops re-emitting after a write.
 
 ## Source layout
 
@@ -32,6 +46,39 @@ lib/*                                 pure helpers (dates, validation) usable by
 | `src/lib`        | Pure, framework-free helpers                                |
 | `src/styles`     | Design tokens, global styles, component styles              |
 | `tests`          | Vitest + React Testing Library tests, mirroring `src`       |
+
+## Data model (current)
+
+| Store        | Purpose                                       | Notable indexes                   |
+| ------------ | --------------------------------------------- | --------------------------------- |
+| `tasks`      | Current state of each task                    | `status`, `dueDate`               |
+| `taskEvents` | Append-only task history                      | `taskId`, `localDate`, `type`     |
+| `dailyPlans` | One plan per local date                       | `&date` (unique)                  |
+| `planItems`  | A task placed on a day, with frozen snapshots | `planId`, `date`, `[taskId+date]` |
+| `settings`   | Single `app` record: time zone, week start    |                                   |
+
+The schema is versioned in `src/db/schema.ts`. Versions are append-only, and each new version
+lists only the stores it changes.
+
+### Task history and plans
+
+- **Status changes are actions** (`start`, `complete`, `cancel`, `reopen`) with an explicit
+  transition table. Each action updates the task and appends a `TaskEvent` carrying `fromStatus`
+  and `toStatus` in one transaction, so a status can't change without a history entry.
+- **Events are the history.** A task's status at the end of any past day is rebuilt from its
+  events (`statusAtEndOf`). Plan outcomes (`done`, `cancelled`, `rescheduled`, `not_done`,
+  `open`) are derived on read, never stored. Reopening a task next week therefore can't change
+  last week's results.
+- **Plan items are never deleted.**
+  - Unplanning sets `removedAt`.
+  - Rescheduling sets `rescheduledTo` on the original item and adds a new item on the target day.
+  - Snapshot fields (`titleSnapshot`, `prioritySnapshot`, `plannedMinutes`) freeze what was
+    planned.
+  - Past plans can't be edited at all.
+- **Unfinished work** (open tasks whose latest plan is before today) is shown on Today with a
+  "Move to today" action. It is never moved automatically.
+- **Archiving vs deleting:** tasks are archived, not deleted, because plans and history refer
+  to them. Archived tasks are hidden from lists and can be restored.
 
 ## Dates and time
 
