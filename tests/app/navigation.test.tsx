@@ -62,6 +62,7 @@ describe('Today dashboard', () => {
   it('renders every dashboard section', async () => {
     renderAt('/');
     await screen.findByText('Nothing planned for today');
+    await screen.findByText('No habits for today');
 
     for (const name of [
       'Intention',

@@ -14,4 +14,4 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
-export const DEFAULT_WEEK_STARTS_ON = 1;
+export const DEFAULT_WEEK_STARTS_ON: 0 | 1 = 1;

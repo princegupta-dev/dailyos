@@ -13,8 +13,8 @@ export const optionalText = (max: number) =>
     .string()
     .trim()
     .max(max)
-    .optional()
-    .transform((value) => (value === '' ? undefined : value));
+    .transform((value) => (value === '' ? undefined : value))
+    .optional();
 
 export interface ValidationIssue {
   path: string;

@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, openWithVersionCheck } from '@/db/database';
 import { toAppError } from '@/db/errors';
 
 /**
@@ -11,7 +11,7 @@ export async function openDatabase(): Promise<void> {
     throw toAppError({ name: 'MissingAPIError' });
   }
   try {
-    await db.open();
+    await openWithVersionCheck();
   } catch (error) {
     throw toAppError(error);
   }

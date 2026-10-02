@@ -1,4 +1,6 @@
 import type { RouteObject } from 'react-router';
+import { HabitDetailPage } from '@/features/habits/HabitDetailPage';
+import { NewHabitPage } from '@/features/habits/NewHabitPage';
 import { LearnPage } from '@/features/learning/LearnPage';
 import { ReviewPage } from '@/features/reviews/ReviewPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
@@ -23,6 +25,8 @@ export const routes: RouteObject[] = [
       { path: 'learn', element: <LearnPage /> },
       { path: 'review', element: <ReviewPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/habits/new', element: <NewHabitPage /> },
+      { path: 'settings/habits/:habitId', element: <HabitDetailPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

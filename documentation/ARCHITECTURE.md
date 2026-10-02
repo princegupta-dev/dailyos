@@ -80,6 +80,41 @@ lists only the stores it changes.
 - **Archiving vs deleting:** tasks are archived, not deleted, because plans and history refer
   to them. Archived tasks are hidden from lists and can be restored.
 
+### Habits
+
+- **Schedules:** `daily`, `selected_days` (chosen weekdays), and `weekly` (once per week, any
+  day counts; the week start comes from settings).
+- **Entries:** at most one status (`completed`, `skipped`, `missed`) per habit per date. A
+  unique compound index enforces this, and writes upsert inside a transaction. Clearing a
+  status deletes the entry.
+- **Occurrences are derived, never stored.** A past occurrence without an entry counts as
+  missed. Today's (or this week's) is _pending_, not a failure. Future occurrences aren't
+  eligible yet.
+- **Skipping is neutral.** Completion rate is `completed / (completed + missed)`. Streaks count
+  consecutive completed occurrences: skipped ones neither extend nor break a streak, and a
+  pending one today doesn't break it.
+- **Counted in occurrences and calendar dates**, never in 24-hour periods. Weekly occurrences
+  belong to the range containing the first day of their week, so adjacent weekly or monthly
+  ranges never count a week twice.
+- **Ending a habit** sets `archivedOn`. It stops counting from that date and its history stays.
+  Ending is permanent, because resuming would make the gap look like missed days.
+- **Known limitation:** editing a habit's schedule re-evaluates its past occurrences under the
+  new schedule. Entries themselves are never changed.
+
+### Daily plans
+
+The intention and up to three top outcomes live on the day's `DailyPlan`, which is created on
+first edit. Plans for today and later are editable. Yesterday's is too, as a grace period for a
+late-night review. Older plans are read-only.
+
+### Opening the database safely
+
+`openWithVersionCheck` opens IndexedDB and runs pending migrations. If the stored schema is
+newer than the code (the data was written by a newer app version), Dexie 4 would open it
+anyway. Instead, DailyOS closes the connection and asks for a reload, leaving the data
+untouched. Migration tests upgrade every earlier version to the current one with data in
+place.
+
 ## Dates and time
 
 - A **date key** (`YYYY-MM-DD`) identifies a local calendar day. It is always derived from an
@@ -90,7 +125,8 @@ lists only the stores it changes.
   days are 23 or 25 hours long across DST changes. DST and midnight boundaries are tested.
 - The Today screen re-derives the date key every minute and whenever the page becomes visible,
   because installed PWAs are often resumed rather than reloaded across midnight.
-- Milestone 1 uses the device time zone. A user preference arrives with Settings.
+- The active time zone is the Settings preference, or the device zone when none is set. Each
+  `DailyPlan` records the zone it was created in.
 
 ## Design system
 

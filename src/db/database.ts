@@ -1,8 +1,10 @@
 import Dexie, { type Table } from 'dexie';
+import type { Habit, HabitEntry } from '@/domain/habit';
 import type { DailyPlan, PlanItem } from '@/domain/plan';
 import type { Settings } from '@/domain/settings';
 import type { Task, TaskEvent } from '@/domain/task';
-import { SCHEMA_VERSIONS, type SchemaVersion } from './schema';
+import { AppError } from './errors';
+import { CURRENT_SCHEMA_VERSION, SCHEMA_VERSIONS, type SchemaVersion } from './schema';
 
 export const DATABASE_NAME = 'dailyos';
 
@@ -12,6 +14,8 @@ export class DailyOSDatabase extends Dexie {
   dailyPlans!: Table<DailyPlan, string>;
   planItems!: Table<PlanItem, string>;
   settings!: Table<Settings, string>;
+  habits!: Table<Habit, string>;
+  habitEntries!: Table<HabitEntry, string>;
 
   constructor(name = DATABASE_NAME, versions: readonly SchemaVersion[] = SCHEMA_VERSIONS) {
     super(name);
@@ -23,3 +27,21 @@ export class DailyOSDatabase extends Dexie {
 }
 
 export const db = new DailyOSDatabase();
+
+/**
+ * Opens the database and refuses to continue if it was created by a newer app version.
+ * Dexie 4 would otherwise open it with the newer, unknown schema. The connection is closed
+ * and nothing is modified, so the newer app's data stays intact until this app updates.
+ */
+export async function openWithVersionCheck(database: DailyOSDatabase = db): Promise<void> {
+  await database.open();
+  // Dexie stores schema version × 10 as the native IndexedDB version.
+  const installed = database.backendDB().version / 10;
+  if (installed > CURRENT_SCHEMA_VERSION) {
+    database.close();
+    throw new AppError(
+      'version',
+      'Your saved data was created by a newer version of DailyOS. Reload to update the app.',
+    );
+  }
+}

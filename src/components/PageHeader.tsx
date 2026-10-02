@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 
 interface PageHeaderProps {
   title: string;
-  eyebrow?: string;
-  description?: string;
+  eyebrow?: string | undefined;
+  description?: string | undefined;
   actions?: ReactNode;
 }
 

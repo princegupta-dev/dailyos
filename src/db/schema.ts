@@ -24,6 +24,14 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       settings: 'id',
     },
   },
+  {
+    version: 2,
+    stores: {
+      habits: 'id, archivedAt',
+      // Unique compound index: at most one entry per habit per date.
+      habitEntries: 'id, &[habitId+date], habitId, date',
+    },
+  },
 ];
 
 export const CURRENT_SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 0;
