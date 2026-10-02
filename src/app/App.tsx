@@ -3,7 +3,9 @@ import { ToastProvider } from '@/components/ToastProvider';
 import { DatabaseGate } from './DatabaseGate';
 import { routes } from './routes';
 
-const router = createBrowserRouter(routes);
+// Served under a sub-path on GitHub Pages (see vite.config.ts); '/' locally.
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+const router = createBrowserRouter(routes, { basename });
 
 export function App() {
   return (

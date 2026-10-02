@@ -7,7 +7,7 @@ An iPhone-first, local-first personal learning and execution system.
 > Plan intentionally. Capture what you learn. Record what you do. Review honestly. Improve continuously.
 
 DailyOS is a Progressive Web App built with React, TypeScript, and Vite. There is no backend.
-Your records will live in your browser's IndexedDB, and you'll be able to export or restore them as JSON.
+Your records live in your browser's IndexedDB, and you can download a JSON backup and restore it from Settings.
 
 ## Status
 
@@ -17,12 +17,26 @@ so explicitly.
 | Milestone                         | Status      |
 | --------------------------------- | ----------- |
 | 1. Foundation                     | Done        |
-| 2. Database and tasks             | Not started |
-| 3. Habits and daily planning      | Not started |
-| 4. Learning journal               | Not started |
-| 5. Daily, weekly, monthly reviews | Not started |
-| 6. Backup and PWA (offline)       | Not started |
+| 2. Database and tasks             | Done        |
+| 3. Habits and daily planning      | Done        |
+| 4. Learning journal               | Done        |
+| 5. Daily, weekly, monthly reviews | Done        |
+| 6. Backup and PWA (offline)       | Done        |
 | 7. Polish and release readiness   | Not started |
+
+## Use it on your phone
+
+DailyOS is published free on GitHub Pages at **https://princegupta-dev.github.io/dailyos/**.
+Every push to `main` runs all checks and redeploys only if they pass
+(`.github/workflows/deploy.yml`).
+
+- **iPhone:** open the link in Safari → Share → **Add to Home Screen**, then always open DailyOS
+  from that icon. It runs full screen and works offline.
+- **Android:** open the link in Chrome → menu → **Install app**.
+
+The home-screen app keeps its own storage, separate from the browser tab, and data never leaves
+the device. To move data between devices or browsers, download a backup in Settings on one and
+restore it on the other.
 
 ## Quick start
 
@@ -45,5 +59,6 @@ See [documentation/DEVELOPMENT.md](documentation/DEVELOPMENT.md) for the full wo
 ## Privacy
 
 DailyOS makes no network requests for your data. Everything stays on the device you use.
-Clearing your browser's site data removes it, so you should export backups regularly once export
-is available (Milestone 6).
+Clearing your browser's site data removes it, so download a backup regularly from
+**Settings → Your data**. Restoring checks the whole file first and either adds only what's new or,
+after confirmation, replaces everything.

@@ -24,7 +24,7 @@ export function RouteError() {
           type="button"
           className="button button--secondary"
           onClick={() => {
-            window.location.assign('/');
+            window.location.assign(import.meta.env.BASE_URL);
           }}
         >
           Return to Today

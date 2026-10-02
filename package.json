@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "DailyOS \u2014 a local-first personal learning and execution system.",
+  "description": "DailyOS — a local-first personal learning and execution system.",
   "engines": {
     "node": ">=20.12.0"
   },
@@ -50,6 +50,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.0",
     "vite": "^6.4.3",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "^3.2.7"
   }
 }
