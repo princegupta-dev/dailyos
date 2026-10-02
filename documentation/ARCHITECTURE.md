@@ -1,7 +1,7 @@
 # Architecture
 
 DailyOS is a frontend-only, local-first PWA. The browser is the whole system: there is no server,
-account, or sync in the MVP. A future HTTP API will be described in `API_CONTRACT.md`. The
+account, or sync in the MVP. A future HTTP API is described in [API_CONTRACT.md](API_CONTRACT.md). The
 current app never calls it.
 
 ## Layers
@@ -100,6 +100,53 @@ lists only the stores it changes.
   Ending is permanent, because resuming would make the gap look like missed days.
 - **Known limitation:** editing a habit's schedule re-evaluates its past occurrences under the
   new schedule. Entries themselves are never changed.
+
+### Learning journal
+
+- **Quick captures need one sentence.** The title is optional and falls back to the first line.
+  An entry's `format` is derived: filling any structured field (explanation, example,
+  questions, application, source) makes it `structured`.
+- **Topics** are free text, whitespace-normalized, and matched case- and accent-insensitively.
+- **Search runs in memory** over all entries: every term must appear in some field. A
+  personal journal stays in the thousands of entries, where scanning is fast and avoids
+  maintaining a full-text index in IndexedDB.
+- **Review dates** are a list of `{ date, completedAt? }`. Entries due on or before today show
+  under "Due for review" until each date is ticked off. Editing an entry keeps the completion
+  state of review dates that stay scheduled.
+- **Related tasks** are validated on save. A multi-entry index lets a task list the entries
+  that reference it.
+- **Archive vs delete:** archived entries leave lists and search but can be restored. Delete is
+  permanent and asks for confirmation. Nothing else references learning entries, so deleting
+  one can't break other records.
+
+### Reviews and summaries
+
+- **One review per period.** A unique `[periodType+periodStart]` index plus an upsert in one
+  transaction prevents duplicates. Route params are normalized to the real period start (any
+  date in a week opens that week's review). Periods that haven't started can't be reviewed.
+- **Summaries are computed, never stored** (`services/analytics.service.ts`). One flat loader
+  reads the records for a range, and pure functions compute:
+  - **Daily: planned vs. actual.** Each planned item's outcome comes from task history, plus
+    tasks completed without being planned, top outcomes, habit statuses, and learning
+    captured that day.
+  - **Weekly and monthly:**
+    - Tasks completed: distinct tasks with a completion in the range that were still done at
+      its end.
+    - Plan kept: `done / (done + not done + open)`; rescheduled and cancelled items are excluded.
+    - Habit consistency, learning topics, and average daily rating.
+    - Recurring blockers from daily reviews and reschedule notes, grouped ignoring case,
+      accents, bullets, and punctuation.
+  - **Month view:** a week-by-week table, with each week clipped to the month so the weeks add
+    up to the month.
+- **Historical integrity:** summaries use plan snapshots and rebuilt past statuses. Editing,
+  reopening, or rescheduling a task later doesn't change an earlier summary (tested).
+- **Carry-forward without copies:**
+  - Open actions stay where they were created and show in later reviews ("Still open from
+    earlier"), on the Review hub, and on Today until marked done.
+  - An action can be turned into an inbox task, which is linked once.
+  - Each review's "focus for next period" is shown at the top of the following review.
+- **Editing a saved review:** the form remounts whenever the stored review or its actions
+  change, so a later save never resurrects stale action ids or statuses.
 
 ### Daily plans
 

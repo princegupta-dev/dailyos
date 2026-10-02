@@ -34,6 +34,7 @@ import { useLiveData } from '@/hooks/useLiveData';
 import { useTimeZone, useToday } from '@/hooks/useToday';
 import { formatMinutes, formatTimestamp, relativeDayLabel } from '@/lib/format';
 import { describeEvent } from './eventLabels';
+import { RelatedLearning } from './RelatedLearning';
 import { RescheduleDialog } from './RescheduleDialog';
 import { TaskForm } from './TaskForm';
 
@@ -81,7 +82,7 @@ function TaskDetailView({ detail }: { detail: TaskDetail }) {
       <PageHeader
         eyebrow={archived ? `${STATUS_LABELS[task.status]} · Archived` : STATUS_LABELS[task.status]}
         title={task.title}
-        actions={
+        leading={
           <Link to="/tasks" className="icon-button" aria-label="Back to tasks">
             <ArrowLeft size={20} aria-hidden="true" />
           </Link>
@@ -218,6 +219,8 @@ function TaskDetailView({ detail }: { detail: TaskDetail }) {
           </dl>
         )}
       </Section>
+
+      <RelatedLearning taskId={task.id} today={today} />
 
       <Section title="Plan history">
         {planItems.length === 0 ? (

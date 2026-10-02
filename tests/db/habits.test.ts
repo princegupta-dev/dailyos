@@ -69,7 +69,7 @@ describe('habit definitions', () => {
 describe('habit entries', () => {
   it('keeps at most one record per habit and date, updating in place', async () => {
     const habit = await createHabit({ name: 'Read', frequency: 'daily' });
-    await setHabitStatus(habit.id, '2026-09-28', 'skipped', 'Travel day');
+    await setHabitStatus(habit.id, '2026-09-28', 'skipped', { note: 'Travel day' });
     setNow('2026-09-28T20:00:00Z');
     await setHabitStatus(habit.id, '2026-09-28', 'completed');
 
@@ -79,7 +79,42 @@ describe('habit entries', () => {
       status: 'completed',
       createdAt: '2026-09-28T08:00:00.000Z',
     });
-    expect(entries[0]).not.toHaveProperty('note');
+    // Changing only the status keeps details recorded earlier.
+    expect(entries[0]?.note).toBe('Travel day');
+  });
+
+  it('records optional activity details and replaces them only when new details are given', async () => {
+    const gym = await createHabit({
+      name: 'Gym',
+      category: 'fitness',
+      frequency: 'daily',
+      target: 45,
+      unit: 'min',
+    });
+    await setHabitStatus(gym.id, '2026-09-28', 'completed', {
+      amount: 50,
+      log: { workout: 'Push day', durationMin: 50, details: '' },
+      tags: ['Strength', 'Strength'],
+    });
+    let [entry] = await db.habitEntries.toArray();
+    expect(entry).toMatchObject({
+      amount: 50,
+      log: { workout: 'Push day', durationMin: 50 },
+      tags: ['Strength'],
+    });
+    expect(entry?.log).not.toHaveProperty('details');
+
+    await setHabitStatus(gym.id, '2026-09-28', 'completed', { minimum: true });
+    [entry] = await db.habitEntries.toArray();
+    expect(entry).toMatchObject({ minimum: true, tags: [] });
+    expect(entry).not.toHaveProperty('log');
+    expect(entry).not.toHaveProperty('amount');
+  });
+
+  it('only flags "did the minimum" on completions', async () => {
+    const habit = await createHabit({ name: 'Read', frequency: 'daily' });
+    await setHabitStatus(habit.id, '2026-09-28', 'skipped', { minimum: true });
+    expect((await db.habitEntries.toArray())[0]).not.toHaveProperty('minimum');
   });
 
   it('the database itself rejects a second record for the same habit and date', async () => {

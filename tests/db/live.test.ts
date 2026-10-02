@@ -1,5 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { subscribeLive } from '@/db/live';
+import { getReviewForPeriod, listOpenActions, saveReview } from '@/db/repositories/reviews';
+import { periodContaining } from '@/domain/review';
+import { getDailySummary, getRangeReport } from '@/services/analytics.service';
+import {
+  createLearningEntry,
+  getLearningDetail,
+  listDueReviews,
+  listRecentLearning,
+  searchLearning,
+  setReviewDone,
+} from '@/db/repositories/learning';
 import {
   createHabit,
   getHabitDetail,
@@ -129,6 +140,46 @@ describe('live queries re-run after writes', () => {
     await until(
       () =>
         day.at(-1)?.[0]?.occurrence.status === 'completed' && detail.at(-1)?.entries.length === 1,
+    );
+  });
+
+  it('learning reads', async () => {
+    const search = observe(() => searchLearning({ text: 'dexie' }));
+    const recent = observe(() => listRecentLearning(3));
+    const due = observe(() => listDueReviews(today()));
+    await until(() => search.length === 1 && recent.length === 1 && due.length === 1);
+    const entry = await createLearningEntry({ content: 'Dexie tip', reviewDates: [today()] });
+    await until(
+      () =>
+        search.at(-1)?.entries.length === 1 &&
+        recent.at(-1)?.length === 1 &&
+        due.at(-1)?.length === 1,
+    );
+    const detail = observe(() => getLearningDetail(entry.id));
+    await until(() => detail.length === 1);
+    await setReviewDone(entry.id, today(), true);
+    await until(
+      () =>
+        due.at(-1)?.length === 0 && detail.at(-1)?.entry.reviewDates[0]?.completedAt !== undefined,
+    );
+  });
+
+  it('review reads and summaries', async () => {
+    const period = periodContaining('daily', today(), 1);
+    const review = observe(() => getReviewForPeriod('daily', today()));
+    const open = observe(() => listOpenActions());
+    const daily = observe(() => getDailySummary(today(), today(), 1));
+    const range = observe(() => getRangeReport(today(), today(), today(), 1, true));
+    await until(
+      () => review.length === 1 && open.length === 1 && daily.length === 1 && range.length === 1,
+    );
+
+    await saveReview(period, { wins: 'x', actions: [{ title: 'Follow up' }] });
+    await until(() => review.at(-1)?.review?.wins === 'x' && open.at(-1)?.length === 1);
+
+    await createTask({ title: 'Planned' }, { planFor: today() });
+    await until(
+      () => daily.at(-1)?.counts.planned === 1 && range.at(-1)?.summary.plan.planned === 1,
     );
   });
 });

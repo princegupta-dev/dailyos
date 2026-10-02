@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { addDays, eachDay, startOfWeek, weekdayOf } from '@/lib/dates';
 import { dateKeySchema, idSchema, optionalText, timestampSchema } from '@/lib/validation';
+import { activityLogSchema } from './activityLog';
+import { HABIT_CATEGORIES } from './categories';
 
 export const HABIT_FREQUENCIES = ['daily', 'weekly', 'selected_days'] as const;
 export type HabitFrequency = (typeof HABIT_FREQUENCIES)[number];
@@ -12,13 +14,26 @@ const weekdaysSchema = z
   .array(z.number().int().min(0).max(6))
   .refine((days) => new Set(days).size === days.length, 'Weekdays must be unique');
 
+const tagsSchema = z
+  .array(z.string().trim().min(1).max(40))
+  .max(20)
+  .transform((tags) => [...new Set(tags)]);
+
 export const habitSchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1).max(80),
   description: optionalText(500),
+  category: z.enum(HABIT_CATEGORIES),
   frequency: z.enum(HABIT_FREQUENCIES),
   /** Required for `selected_days`; 0 = Sunday … 6 = Saturday. */
   weekdays: weekdaysSchema.optional(),
+  /** Optional goal per occurrence, e.g. 30 (unit "min") or 20 (unit "pages"). */
+  target: z.number().positive().max(100_000).optional(),
+  unit: optionalText(20),
+  /** The smallest version that still counts on a hard day, e.g. "10 minutes". */
+  minimumTarget: optionalText(120),
+  /** Other activities that also count, e.g. "Running" for a gym habit. */
+  alternatives: z.array(z.string().trim().min(1).max(60)).max(8).optional(),
   /** First local date the habit counts. Entries and occurrences before it are ignored. */
   startDate: dateKeySchema,
   position: z.number().int().min(0),
@@ -34,17 +49,27 @@ export const habitDraftSchema = z
   .object({
     name: z.string().trim().min(1, 'Name is required').max(80, 'Keep the name under 80 characters'),
     description: optionalText(500),
+    category: z.enum(HABIT_CATEGORIES).default('other'),
     frequency: z.enum(HABIT_FREQUENCIES),
     weekdays: weekdaysSchema.optional(),
+    target: z.number().positive('Use a positive number').max(100_000).optional(),
+    unit: optionalText(20),
+    minimumTarget: optionalText(120),
+    alternatives: z.array(z.string().trim().max(60)).max(8, 'Up to 8 alternatives').optional(),
   })
   .refine((h) => h.frequency !== 'selected_days' || (h.weekdays?.length ?? 0) > 0, {
     path: ['weekdays'],
     message: 'Choose at least one day',
   })
-  .transform((h) => ({
-    ...h,
-    weekdays: h.frequency === 'selected_days' ? [...(h.weekdays ?? [])].sort() : undefined,
-  }));
+  .transform((h) => {
+    const alternatives = [...new Set((h.alternatives ?? []).filter((a) => a !== ''))];
+    return {
+      ...h,
+      weekdays: h.frequency === 'selected_days' ? [...(h.weekdays ?? [])].sort() : undefined,
+      unit: h.target === undefined ? undefined : h.unit,
+      alternatives: alternatives.length > 0 ? alternatives : undefined,
+    };
+  });
 export type HabitDraft = z.input<typeof habitDraftSchema>;
 
 export const habitEntrySchema = z.object({
@@ -53,10 +78,30 @@ export const habitEntrySchema = z.object({
   date: dateKeySchema,
   status: z.enum(HABIT_STATUSES),
   note: optionalText(500),
+  /** Progress toward the habit's target, in its unit. */
+  amount: z.number().min(0).max(100_000).optional(),
+  /** Done the minimum version. Still counts as completed. */
+  minimum: z.boolean().optional(),
+  /** Which alternative was done instead of the main activity, if any. */
+  alternative: optionalText(60),
+  /** Optional category-specific details (see domain/activityLog.ts). */
+  log: activityLogSchema.optional(),
+  tags: tagsSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 });
 export type HabitEntry = z.infer<typeof habitEntrySchema>;
+
+/** Optional details recorded with a status. Everything here can be left out. */
+export const habitEntryDetailsSchema = z.object({
+  note: optionalText(500),
+  amount: z.number().min(0, 'Use zero or more').max(100_000).optional(),
+  minimum: z.boolean().optional(),
+  alternative: optionalText(60),
+  log: activityLogSchema.optional(),
+  tags: tagsSchema.default([]),
+});
+export type HabitEntryDetails = z.input<typeof habitEntryDetailsSchema>;
 
 export type OccurrenceStatus = HabitStatus | 'pending';
 
@@ -199,10 +244,58 @@ export function currentStreak(occurrences: readonly Occurrence[]): number {
   return streak;
 }
 
+/**
+ * Longest run of completed occurrences in history. Same rules as the current streak:
+ * skipped occurrences are neutral, missed ones end a run, unscheduled days don't exist as
+ * occurrences at all, and a pending occurrence neither extends nor ends a run.
+ */
+export function longestStreak(occurrences: readonly Occurrence[]): number {
+  let longest = 0;
+  let run = 0;
+  for (const { status } of occurrences) {
+    if (status === 'completed') longest = Math.max(longest, ++run);
+    else if (status === 'missed') run = 0;
+  }
+  return longest;
+}
+
+export interface HabitStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalCompletions: number;
+}
+
+export function habitStats(occurrences: readonly Occurrence[]): HabitStats {
+  return {
+    currentStreak: currentStreak(occurrences),
+    longestStreak: longestStreak(occurrences),
+    totalCompletions: occurrences.filter((o) => o.status === 'completed').length,
+  };
+}
+
+export const WEEKDAYS_MON_FRI = [1, 2, 3, 4, 5] as const;
+
+/** True when a selected-days schedule is exactly Monday–Friday. */
+export function isWeekdaysSchedule(habit: Pick<Habit, 'frequency' | 'weekdays'>): boolean {
+  const days = habit.weekdays ?? [];
+  return (
+    habit.frequency === 'selected_days' &&
+    days.length === WEEKDAYS_MON_FRI.length &&
+    WEEKDAYS_MON_FRI.every((d) => days.includes(d))
+  );
+}
+
+/** "30 min", "20 pages", or undefined when there's no target. */
+export function describeTarget(habit: Pick<Habit, 'target' | 'unit'>): string | undefined {
+  if (habit.target === undefined) return undefined;
+  return habit.unit ? `${habit.target} ${habit.unit}` : String(habit.target);
+}
+
 export const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
 export function describeSchedule(habit: Pick<Habit, 'frequency' | 'weekdays'>): string {
   if (habit.frequency === 'daily') return 'Every day';
   if (habit.frequency === 'weekly') return 'Once a week';
+  if (isWeekdaysSchedule(habit)) return 'Weekdays';
   return (habit.weekdays ?? []).map((d) => WEEKDAY_SHORT[d]).join(', ');
 }

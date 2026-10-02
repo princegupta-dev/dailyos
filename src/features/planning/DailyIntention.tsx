@@ -82,7 +82,7 @@ function IntentionForm({ date, plan }: { date: string; plan: DailyPlan | undefin
           className="input input--textarea intention-input"
           rows={2}
           maxLength={500}
-          placeholder="How do you want today to go?"
+          placeholder="How do you want today to go? (optional)"
           value={shown.intention}
           onChange={(e) => {
             const intention = e.target.value;
@@ -92,7 +92,7 @@ function IntentionForm({ date, plan }: { date: string; plan: DailyPlan | undefin
       </Section>
 
       <Section
-        title="Top outcomes"
+        title="Priorities"
         meta={savedCount > 0 ? `${doneCount} of ${savedCount} done` : undefined}
       >
         <ol className="outcome-list">
@@ -106,19 +106,19 @@ function IntentionForm({ date, plan }: { date: string; plan: DailyPlan | undefin
                 className="checkbox"
                 checked={outcome.done}
                 disabled={outcome.text.trim() === '' || pending}
-                aria-label={`Outcome ${index + 1} done`}
+                aria-label={`Priority ${index + 1} done`}
                 onChange={() => {
                   toggleOutcome(index);
                 }}
               />
               <label className="visually-hidden" htmlFor={`outcome-${index}`}>
-                Outcome {index + 1}
+                Priority {index + 1}
               </label>
               <input
                 id={`outcome-${index}`}
                 className={`outcome-input${outcome.done ? ' outcome-input--done' : ''}`}
                 maxLength={200}
-                placeholder={`Outcome ${index + 1}`}
+                placeholder={index === 0 ? 'Most important thing today' : `Priority ${index + 1}`}
                 autoComplete="off"
                 value={outcome.text}
                 onChange={(e) => {
