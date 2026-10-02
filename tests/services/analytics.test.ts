@@ -96,8 +96,9 @@ describe('weekly and monthly summaries', () => {
     const a = await createTask({ title: 'A' }, { planFor: '2026-09-28' });
     const b = await createTask({ title: 'B' }, { planFor: '2026-09-29' });
     const c = await createTask({ title: 'C' });
-    await createLearningEntry({ content: 'x', topic: 'TypeScript' });
-    await createLearningEntry({ content: 'y', topic: 'typescript' });
+    await createLearningEntry({ content: 'x', topic: 'typescript' });
+    at('2026-09-28', '09:30');
+    await createLearningEntry({ content: 'y', topic: 'TypeScript' }); // latest spelling wins
     await createLearningEntry({ content: 'z', topic: 'Leadership' });
 
     at('2026-09-28', '12:00');

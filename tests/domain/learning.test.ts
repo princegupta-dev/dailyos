@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   distinctTopics,
   filterLearning,
+  groupTopics,
   learningDraftSchema,
   nextDueReview,
   suggestReviewDates,
@@ -114,6 +115,14 @@ describe('search and filters', () => {
 
   it('lists distinct topics merged case-insensitively', () => {
     expect(distinctTopics(entries)).toEqual(['indexeddb', 'Travel']);
+  });
+
+  it('picks the same display spelling regardless of input order', () => {
+    const tie = '2026-10-05T10:00:00.000Z';
+    const a = entry({ topic: 'TypeScript', capturedAt: tie });
+    const b = entry({ topic: 'typescript', capturedAt: tie });
+    expect(groupTopics([a, b])).toEqual(groupTopics([b, a]));
+    expect(groupTopics([a, b])[0]?.count).toBe(2);
   });
 });
 

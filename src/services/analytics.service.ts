@@ -8,7 +8,7 @@ import {
   type OccurrenceStatus,
   type OccurrenceSummary,
 } from '@/domain/habit';
-import { normalizeForSearch, type LearningEntry } from '@/domain/learning';
+import { groupTopics, normalizeForSearch, type LearningEntry } from '@/domain/learning';
 import {
   derivePlanItemOutcome,
   type DailyPlan,
@@ -157,14 +157,22 @@ export function countPlanResults(results: readonly PlannedResult[]): PlanCounts 
   };
 }
 
-/** Distinct tasks completed in [from, to] that were still done at the end of the range. */
+/**
+ * Distinct tasks completed in [from, to] that were still done at the end of the range, in the
+ * order they were (last) completed.
+ */
 function completedInRange(records: PeriodRecords, from: string, to: string): string[] {
-  const ids = new Set(
-    records.eventsInRange
-      .filter((e) => e.type === 'completed' && e.localDate >= from && e.localDate <= to)
-      .map((e) => e.taskId),
-  );
-  return [...ids].filter((id) => statusAtEndOf(to, records.eventsByTask.get(id) ?? []) === 'done');
+  const lastCompletion = new Map<string, string>();
+  for (const e of records.eventsInRange) {
+    if (e.type !== 'completed' || e.localDate < from || e.localDate > to) continue;
+    const previous = lastCompletion.get(e.taskId);
+    if (previous === undefined || e.occurredAt > previous)
+      lastCompletion.set(e.taskId, e.occurredAt);
+  }
+  return [...lastCompletion.entries()]
+    .filter(([id]) => statusAtEndOf(to, records.eventsByTask.get(id) ?? []) === 'done')
+    .sort(([, a], [, b]) => a.localeCompare(b))
+    .map(([id]) => id);
 }
 
 export function computeDailySummary(
@@ -307,17 +315,7 @@ export function computeRangeSummary(
         ];
   });
 
-  const topicCounts = new Map<string, { topic: string; count: number }>();
   const learning = records.learning.filter((e) => inRange(e.capturedDate));
-  for (const entry of learning) {
-    if (!entry.topic) continue;
-    const key = normalizeForSearch(entry.topic);
-    const current = topicCounts.get(key);
-    topicCounts.set(key, {
-      topic: current?.topic ?? entry.topic,
-      count: (current?.count ?? 0) + 1,
-    });
-  }
 
   const reviews = records.dailyReviews.filter((r) => inRange(r.periodStart));
   const rated = reviews.flatMap((r) => (r.rating === undefined ? [] : [r.rating]));
@@ -345,9 +343,9 @@ export function computeRangeSummary(
     },
     learning: {
       count: learning.length,
-      topics: [...topicCounts.values()].sort(
-        (a, b) => b.count - a.count || a.topic.localeCompare(b.topic),
-      ),
+      topics: groupTopics(learning)
+        .map(({ topic, count }) => ({ topic, count }))
+        .sort((a, b) => b.count - a.count || a.topic.localeCompare(b.topic)),
     },
     ratings: {
       average: rated.length === 0 ? null : rated.reduce((sum, r) => sum + r, 0) / rated.length,

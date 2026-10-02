@@ -161,15 +161,39 @@ export function filterLearning(
     .sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
 }
 
-/** Distinct topics, merged case-insensitively, keeping the most recent spelling, A–Z. */
-export function distinctTopics(entries: readonly LearningEntry[]): string[] {
-  const byKey = new Map<string, { topic: string; at: string }>();
+export interface TopicGroup {
+  /** Display spelling: the most recently used one; ties go to the one that sorts first. */
+  topic: string;
+  count: number;
+  lastUsedAt: string;
+}
+
+/** Groups entries by topic, ignoring case and accents. Deterministic regardless of input order. */
+export function groupTopics(entries: readonly LearningEntry[]): TopicGroup[] {
+  const groups = new Map<string, TopicGroup>();
   for (const entry of entries) {
     if (!entry.topic) continue;
     const key = normalizeForSearch(entry.topic);
-    const existing = byKey.get(key);
-    if (!existing || entry.capturedAt > existing.at)
-      byKey.set(key, { topic: entry.topic, at: entry.capturedAt });
+    const group = groups.get(key);
+    if (!group) {
+      groups.set(key, { topic: entry.topic, count: 1, lastUsedAt: entry.capturedAt });
+      continue;
+    }
+    group.count++;
+    const newer = entry.capturedAt > group.lastUsedAt;
+    const tieWins =
+      entry.capturedAt === group.lastUsedAt && entry.topic.localeCompare(group.topic) < 0;
+    if (newer || tieWins) {
+      group.topic = entry.topic;
+      group.lastUsedAt = entry.capturedAt;
+    }
   }
-  return [...byKey.values()].map((t) => t.topic).sort((a, b) => a.localeCompare(b));
+  return [...groups.values()];
+}
+
+/** Distinct topics for filters, A–Z. */
+export function distinctTopics(entries: readonly LearningEntry[]): string[] {
+  return groupTopics(entries)
+    .map((g) => g.topic)
+    .sort((a, b) => a.localeCompare(b));
 }

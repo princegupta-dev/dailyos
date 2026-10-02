@@ -168,8 +168,15 @@ export async function listOpenActions(beforeStart?: string): Promise<OpenAction[
 }
 
 export async function listReviews(limit: number): Promise<Review[]> {
-  const reviews = await db.reviews.orderBy('periodStart').reverse().toArray();
-  return reviews.slice(0, limit);
+  const reviews = await db.reviews.toArray();
+  const typeOrder = { daily: 0, weekly: 1, monthly: 2 } as const;
+  return reviews
+    .sort(
+      (a, b) =>
+        b.periodStart.localeCompare(a.periodStart) ||
+        typeOrder[a.periodType] - typeOrder[b.periodType],
+    )
+    .slice(0, limit);
 }
 
 /** Which of the given periods already have a review, keyed `type:start`. */
