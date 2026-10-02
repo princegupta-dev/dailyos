@@ -6,10 +6,10 @@ import { createLearningEntry } from '@/db/repositories/learning';
 import { createTask } from '@/db/repositories/tasks';
 import { useAction } from '@/hooks/useAction';
 
-type Mode = 'learning' | 'task';
+type Mode = 'note' | 'task';
 
 const MODES: readonly { value: Mode; label: string }[] = [
-  { value: 'learning', label: 'Learning' },
+  { value: 'note', label: 'Note' },
   { value: 'task', label: 'Task' },
 ];
 
@@ -24,7 +24,7 @@ interface QuickCaptureDialogProps {
  */
 export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) {
   const { run, pending } = useAction();
-  const [mode, setMode] = useState<Mode>('learning');
+  const [mode, setMode] = useState<Mode>('note');
   const [text, setText] = useState('');
   const [topic, setTopic] = useState('');
   const [planToday, setPlanToday] = useState(false);
@@ -33,7 +33,7 @@ export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) 
     event.preventDefault();
     if (text.trim() === '') return;
     const result =
-      mode === 'learning'
+      mode === 'note'
         ? await run(() => createLearningEntry({ content: text, topic }), 'Saved to your journal')
         : await run(
             () => createTask({ title: text }, planToday ? { planFor: today } : {}),
@@ -46,10 +46,10 @@ export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) 
     <Dialog open title="Quick capture" onClose={onClose}>
       <SegmentedControl label="Capture type" value={mode} options={MODES} onChange={setMode} />
       <form className="form" onSubmit={(e) => void submit(e)}>
-        {mode === 'learning' ? (
+        {mode === 'note' ? (
           <>
             <TextAreaField
-              label="What did you learn?"
+              label="What did you do or learn?"
               rows={4}
               value={text}
               maxLength={20_000}

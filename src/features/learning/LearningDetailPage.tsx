@@ -82,7 +82,7 @@ function LearningDetailView({ detail }: { detail: LearningDetail }) {
         }
         title={entry.title}
         description={`Captured ${formatTimestamp(entry.capturedAt, timeZone)}`}
-        actions={
+        leading={
           <Link to="/learn" className="icon-button" aria-label="Back to Learn">
             <ArrowLeft size={20} aria-hidden="true" />
           </Link>

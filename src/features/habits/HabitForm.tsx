@@ -1,92 +1,180 @@
-import { useContext, useState, type SyntheticEvent } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
+import { useState, type SyntheticEvent } from 'react';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { TextAreaField, TextField } from '@/components/form';
-import { ToastContext } from '@/components/toast-context';
-import { toAppError } from '@/db/errors';
-import { WEEKDAY_SHORT, type Habit, type HabitDraft, type HabitFrequency } from '@/domain/habit';
-import { issuesByField } from '@/lib/validation';
+import { CATEGORY_HINTS, CATEGORY_LABELS, HABIT_CATEGORIES } from '@/domain/categories';
+import { WEEKDAY_SHORT, type Habit, type HabitDraft } from '@/domain/habit';
+import {
+  initialHabitForm,
+  useHabitFormSubmit,
+  type HabitFormState,
+  type ScheduleChoice,
+} from './habitFormState';
 
-const FREQUENCIES: readonly { value: HabitFrequency; label: string; hint: string }[] = [
-  { value: 'daily', label: 'Every day', hint: 'One check-in per day' },
-  { value: 'selected_days', label: 'Specific days', hint: 'Only on the days you choose' },
-  { value: 'weekly', label: 'Once a week', hint: 'Any day of the week counts' },
+interface SectionProps {
+  state: HabitFormState;
+  errors: Record<string, string>;
+  update: (patch: Partial<HabitFormState>) => void;
+}
+
+export function HabitBasicsFields({ state, errors, update }: SectionProps) {
+  return (
+    <>
+      <TextField
+        label="Habit name"
+        value={state.name}
+        maxLength={80}
+        autoComplete="off"
+        required
+        error={errors.name}
+        placeholder="e.g. Gym workout"
+        onChange={(e) => {
+          update({ name: e.target.value });
+        }}
+      />
+      <fieldset className="fieldset">
+        <legend className="field__label">Category</legend>
+        <div className="category-grid">
+          {HABIT_CATEGORIES.map((category) => (
+            <label key={category} className="category-option">
+              <input
+                type="radio"
+                name="habit-category"
+                checked={state.category === category}
+                onChange={() => {
+                  update({ category });
+                }}
+              />
+              <CategoryIcon category={category} size="sm" />
+              <span className="category-option__label">{CATEGORY_LABELS[category]}</span>
+            </label>
+          ))}
+        </div>
+        <p className="field__hint">{CATEGORY_HINTS[state.category]}</p>
+      </fieldset>
+      <TextAreaField
+        label="Why it matters"
+        hint="Optional"
+        rows={2}
+        maxLength={500}
+        value={state.description}
+        onChange={(e) => {
+          update({ description: e.target.value });
+        }}
+      />
+    </>
+  );
+}
+
+export function HabitRecoveryFields({ state, errors, update }: SectionProps) {
+  return (
+    <>
+      <TextField
+        label="Minimum version"
+        hint="Optional. The smallest thing that still counts on a hard day, e.g. “10 minutes” or “1 easy problem”."
+        value={state.minimumTarget}
+        maxLength={120}
+        onChange={(e) => {
+          update({ minimumTarget: e.target.value });
+        }}
+      />
+      <label className="switch-field">
+        <span>
+          <span className="switch-field__label">Allow alternatives</span>
+          <span className="field__hint">Mark it done by doing one of these instead.</span>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          className="switch"
+          checked={state.allowAlternatives}
+          onChange={(e) => {
+            update({ allowAlternatives: e.target.checked });
+          }}
+        />
+      </label>
+      {state.allowAlternatives && (
+        <div className="field">
+          <ul className="alt-list">
+            {state.alternatives.map((alt, index) => (
+              <li key={index} className="alt-list__row">
+                <input
+                  className="input"
+                  aria-label={`Alternative ${index + 1}`}
+                  value={alt}
+                  maxLength={60}
+                  onChange={(e) => {
+                    const next = [...state.alternatives];
+                    next[index] = e.target.value;
+                    update({ alternatives: next });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="icon-button icon-button--plain"
+                  aria-label={`Remove alternative ${index + 1}`}
+                  onClick={() => {
+                    update({ alternatives: state.alternatives.filter((_, i) => i !== index) });
+                  }}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          {state.alternatives.length < 8 && (
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                update({ alternatives: [...state.alternatives, ''] });
+              }}
+            >
+              <Plus size={16} aria-hidden="true" /> Add alternative
+            </button>
+          )}
+          {errors.alternatives && <p className="field__error">{errors.alternatives}</p>}
+        </div>
+      )}
+    </>
+  );
+}
+
+const SCHEDULES: readonly { value: ScheduleChoice; label: string }[] = [
+  { value: 'daily', label: 'Every day' },
+  { value: 'weekdays', label: 'Weekdays' },
+  { value: 'selected_days', label: 'Specific days' },
+  { value: 'weekly', label: 'Once a week' },
 ];
 
 /** Monday-first display order; values stay 0 = Sunday … 6 = Saturday. */
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
 
-interface HabitFormProps {
-  initial?: Habit;
-  submitLabel: string;
-  onSubmit: (draft: HabitDraft) => Promise<void>;
-  onCancel: () => void;
-}
-
-export function HabitForm({ initial, submitLabel, onSubmit, onCancel }: HabitFormProps) {
-  const notify = useContext(ToastContext);
-  const [name, setName] = useState(initial?.name ?? '');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [frequency, setFrequency] = useState<HabitFrequency>(initial?.frequency ?? 'daily');
-  const [weekdays, setWeekdays] = useState<number[]>(initial?.weekdays ?? [1, 2, 3, 4, 5]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [pending, setPending] = useState(false);
-
-  const submit = async (event: SyntheticEvent) => {
-    event.preventDefault();
-    setPending(true);
-    setErrors({});
-    try {
-      await onSubmit({ name, description, frequency, weekdays });
-    } catch (error) {
-      const appError = toAppError(error);
-      if (appError.kind === 'validation') setErrors(issuesByField(appError.issues));
-      else notify({ kind: 'error', message: appError.message });
-    } finally {
-      setPending(false);
-    }
-  };
-
+export function HabitScheduleFields({ state, errors, update }: SectionProps) {
   return (
-    <form className="form" onSubmit={(e) => void submit(e)} noValidate>
-      <TextField
-        label="Name"
-        value={name}
-        maxLength={80}
-        autoComplete="off"
-        required
-        error={errors.name}
-        onChange={(e) => {
-          setName(e.target.value);
-        }}
-      />
-      <TextAreaField
-        label="Why it matters"
-        hint="Optional"
-        rows={2}
-        value={description}
-        maxLength={500}
-        onChange={(e) => {
-          setDescription(e.target.value);
-        }}
-      />
+    <>
       <fieldset className="fieldset">
-        <legend className="field__label">How often</legend>
-        {FREQUENCIES.map((option) => (
-          <label key={option.value} className="radio-card">
-            <input
-              type="radio"
-              name="frequency"
-              value={option.value}
-              checked={frequency === option.value}
-              onChange={() => {
-                setFrequency(option.value);
-              }}
-            />
-            <span className="radio-card__label">{option.label}</span>
-            <span className="radio-card__hint">{option.hint}</span>
-          </label>
-        ))}
+        <legend className="field__label">Repeat</legend>
+        <div className="choice-row choice-row--wrap">
+          {SCHEDULES.map((s) => (
+            <label key={s.value} className="choice">
+              <input
+                type="radio"
+                name="habit-schedule"
+                checked={state.schedule === s.value}
+                onChange={() => {
+                  update({ schedule: s.value });
+                }}
+              />
+              <span>{s.label}</span>
+            </label>
+          ))}
+        </div>
+        {state.schedule === 'weekly' && (
+          <p className="field__hint">Any one day of the week counts.</p>
+        )}
       </fieldset>
-      {frequency === 'selected_days' && (
+      {state.schedule === 'selected_days' && (
         <fieldset className="fieldset">
           <legend className="field__label">Days</legend>
           <div className="weekday-picker">
@@ -94,12 +182,14 @@ export function HabitForm({ initial, submitLabel, onSubmit, onCancel }: HabitFor
               <label key={day} className="weekday-chip">
                 <input
                   type="checkbox"
-                  checked={weekdays.includes(day)}
+                  checked={state.weekdays.includes(day)}
                   onChange={(e) => {
                     const checked = e.target.checked;
-                    setWeekdays((current) =>
-                      checked ? [...current, day] : current.filter((d) => d !== day),
-                    );
+                    update({
+                      weekdays: checked
+                        ? [...state.weekdays, day]
+                        : state.weekdays.filter((d) => d !== day),
+                    });
                   }}
                 />
                 <span>{WEEKDAY_SHORT[day]}</span>
@@ -109,12 +199,62 @@ export function HabitForm({ initial, submitLabel, onSubmit, onCancel }: HabitFor
           {errors.weekdays && <p className="field__error">{errors.weekdays}</p>}
         </fieldset>
       )}
+      <div className="form__row">
+        <TextField
+          label="Target"
+          hint="Optional"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          value={state.target}
+          error={errors.target}
+          onChange={(e) => {
+            update({ target: e.target.value });
+          }}
+        />
+        <TextField
+          label="Unit"
+          hint="min, pages, problems…"
+          value={state.unit}
+          maxLength={20}
+          disabled={state.target.trim() === ''}
+          onChange={(e) => {
+            update({ unit: e.target.value });
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
+interface HabitEditFormProps {
+  habit: Habit;
+  onSubmit: (draft: HabitDraft) => Promise<void>;
+  onCancel: () => void;
+}
+
+/** All habit settings on one page, for editing an existing habit. */
+export function HabitEditForm({ habit, onSubmit, onCancel }: HabitEditFormProps) {
+  const [state, setState] = useState(() => initialHabitForm(habit));
+  const { errors, pending, submit } = useHabitFormSubmit(onSubmit);
+  const update = (patch: Partial<HabitFormState>) => {
+    setState((s) => ({ ...s, ...patch }));
+  };
+  const handle = (event: SyntheticEvent) => {
+    event.preventDefault();
+    void submit(state);
+  };
+  return (
+    <form className="form" onSubmit={handle} noValidate>
+      <HabitBasicsFields state={state} errors={errors} update={update} />
+      <HabitScheduleFields state={state} errors={errors} update={update} />
+      <HabitRecoveryFields state={state} errors={errors} update={update} />
       <div className="form__actions">
         <button type="button" className="button button--secondary" onClick={onCancel}>
           Cancel
         </button>
         <button type="submit" className="button button--primary" disabled={pending}>
-          {submitLabel}
+          Save changes
         </button>
       </div>
     </form>

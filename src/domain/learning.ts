@@ -49,6 +49,8 @@ export const learningEntrySchema = z.object({
   application: optionalText(5_000),
   source: optionalText(500),
   relatedTaskIds: z.array(idSchema),
+  /** Keywords the person chose (often from local suggestions). Never added automatically. */
+  tags: z.array(z.string().trim().min(1).max(40)).max(20),
   capturedAt: timestampSchema,
   /** Local date of capture, for date filters that match the calendar the person saw. */
   capturedDate: dateKeySchema,
@@ -83,6 +85,7 @@ export const learningDraftSchema = z
     application: optionalText(5_000),
     source: optionalText(500),
     relatedTaskIds: z.array(idSchema).default([]),
+    tags: z.array(z.string().trim().min(1).max(40)).max(20, 'Up to 20 tags').default([]),
     reviewDates: z
       .array(dateKeySchema)
       .default([])
@@ -100,6 +103,7 @@ export const learningDraftSchema = z
       ...d,
       title: d.title !== '' ? d.title : titleFromContent(d.content),
       relatedTaskIds: [...new Set(d.relatedTaskIds)],
+      tags: [...new Set(d.tags)],
       reviewDates: [...d.reviewDates].sort(),
       format,
     };
@@ -155,7 +159,9 @@ export function filterLearning(
       if (filter.to && entry.capturedDate > filter.to) return false;
       if (topic !== undefined && normalizeForSearch(entry.topic ?? '') !== topic) return false;
       if (terms.length === 0) return true;
-      const haystack = normalizeForSearch(SEARCH_FIELDS.map((f) => entry[f] ?? '').join('\n'));
+      const haystack = normalizeForSearch(
+        [...SEARCH_FIELDS.map((f) => entry[f] ?? ''), ...entry.tags].join('\n'),
+      );
       return terms.every((term) => haystack.includes(term));
     })
     .sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));

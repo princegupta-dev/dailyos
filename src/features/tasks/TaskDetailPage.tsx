@@ -82,7 +82,7 @@ function TaskDetailView({ detail }: { detail: TaskDetail }) {
       <PageHeader
         eyebrow={archived ? `${STATUS_LABELS[task.status]} · Archived` : STATUS_LABELS[task.status]}
         title={task.title}
-        actions={
+        leading={
           <Link to="/tasks" className="icon-button" aria-label="Back to tasks">
             <ArrowLeft size={20} aria-hidden="true" />
           </Link>

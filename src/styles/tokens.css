@@ -1,40 +1,62 @@
 /*
- * DailyOS design tokens. Components reference these variables only; raw values live here.
- * Contrast notes (on --color-bg): --color-text 15.1:1, --color-text-muted 6.4:1,
- * --color-primary 7.4:1 — all above WCAG AA for body text.
+ * DailyOS design tokens: calm sage-forest on warm ivory. Components reference these
+ * variables only; raw values live here.
+ * Contrast (checked): text 14.3:1 and muted 5.4:1 on --color-bg; primary 5.4:1 on bg;
+ * white on primary 6.0:1. --color-subtle (3.8:1) is for decorative lines/icons only.
  */
 :root {
   /* Color */
-  --color-primary: #2d5a3d;
-  --color-primary-strong: #1f4029;
-  --color-primary-soft: #e4ece3;
-  --color-on-primary: #fdfbf5;
+  --color-primary: #4a6b4f;
+  --color-primary-strong: #38543d;
+  --color-primary-soft: #e6ece3;
+  --color-primary-faint: #f0f3ed;
+  --color-on-primary: #ffffff;
 
-  --color-bg: #faf7f0;
-  --color-surface: #fffdf8;
-  --color-surface-sunken: #f3efe4;
-  --color-border: #e4ddcd;
-  --color-border-strong: #cfc6b1;
+  --color-bg: #f6f4ee;
+  --color-surface: #fdfcf9;
+  --color-surface-sunken: #efede6;
+  --color-border: #e7e3d8;
+  --color-border-strong: #d3cdbf;
 
-  --color-text: #1d221f;
-  --color-text-muted: #545c56;
-  --color-danger: #a3352b;
-  --color-focus: #2d5a3d;
+  --color-text: #1f2420;
+  --color-text-muted: #5e6660;
+  --color-subtle: #767e78;
+  --color-danger: #a8433a;
+  --color-danger-soft: #f8e9e6;
+  --color-focus: #4a6b4f;
+
+  /* Category accents: soft tile background + readable icon color. */
+  --cat-engineering-bg: #e5ecf6;
+  --cat-engineering-fg: #3f5f8a;
+  --cat-dsa-bg: #ece6f5;
+  --cat-dsa-fg: #644b8c;
+  --cat-fitness-bg: #f8e6e2;
+  --cat-fitness-fg: #a14a3c;
+  --cat-reading-bg: #f8ecdb;
+  --cat-reading-fg: #976122;
+  --cat-career-bg: #e3efe9;
+  --cat-career-fg: #2f6b52;
+  --cat-attention-bg: #f4e4ee;
+  --cat-attention-fg: #8f4370;
+  --cat-other-bg: #ebeae4;
+  --cat-other-fg: #5e6660;
 
   /* Typography — system fonts only, so nothing is fetched over the network. */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-serif: 'Iowan Old Style', 'Charter', 'Palatino Linotype', Palatino, Georgia, serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
 
   --text-xs: 0.8125rem;
   --text-sm: 0.9375rem;
   --text-md: 1.0625rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.625rem;
-  --text-2xl: 2rem;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
 
-  --leading-tight: 1.25;
-  --leading-normal: 1.55;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
 
   /* Spacing (4px base) */
   --space-1: 0.25rem;
@@ -46,12 +68,12 @@
   --space-7: 3rem;
 
   /* Shape and depth */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgb(29 34 31 / 6%);
-  --shadow-md: 0 2px 10px rgb(29 34 31 / 8%);
+  --shadow-sm: 0 1px 2px rgb(31 36 32 / 5%);
+  --shadow-md: 0 4px 16px rgb(31 36 32 / 8%);
 
   /* Layout */
   --touch-target: 44px;

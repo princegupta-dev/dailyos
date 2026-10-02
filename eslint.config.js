@@ -28,6 +28,8 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      // Labels wrap an input, an icon, and a text span; look a little deeper for the text.
+      'jsx-a11y/label-has-associated-control': ['error', { depth: 3 }],
     },
   },
   {

@@ -1,7 +1,6 @@
-import { CalendarClock, CheckCircle2, Plus } from 'lucide-react';
+import { CalendarClock, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
-import { EmptyState } from '@/components/EmptyState';
 import { LiveView } from '@/components/LiveView';
 import { Section } from '@/components/Section';
 import { getDayPlan, listUnfinishedFromEarlier, rescheduleTask } from '@/db/repositories/plans';
@@ -43,11 +42,9 @@ export function TodayTasks({ today }: { today: string }) {
                 />
               )}
               {current.length === 0 ? (
-                <EmptyState
-                  icon={CheckCircle2}
-                  title="Nothing planned for today"
-                  description="Pick a few tasks you intend to finish today."
-                />
+                <p className="muted small">
+                  Nothing planned yet. Pick one or two tasks that matter today.
+                </p>
               ) : (
                 <ul className="task-list" aria-label="Today’s tasks">
                   {current.map(({ item, task }) => (
@@ -72,15 +69,20 @@ export function TodayTasks({ today }: { today: string }) {
                     .join('; ')}
                 </p>
               )}
-              <button
-                type="button"
-                className="button button--secondary button--block section__action"
-                onClick={() => {
-                  setPicking(true);
-                }}
-              >
-                <Plus size={18} aria-hidden="true" /> Plan tasks
-              </button>
+              <div className="section__footer">
+                <button
+                  type="button"
+                  className="button button--secondary button--compact"
+                  onClick={() => {
+                    setPicking(true);
+                  }}
+                >
+                  <Plus size={18} aria-hidden="true" /> Plan tasks
+                </button>
+                <Link to="/tasks" className="link-button">
+                  All tasks
+                </Link>
+              </div>
               {picking && (
                 <PlanTasksDialog
                   date={today}

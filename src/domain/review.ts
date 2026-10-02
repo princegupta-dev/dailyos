@@ -8,7 +8,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from '@/lib/dates';
-import { dateKeySchema, idSchema, timestampSchema } from '@/lib/validation';
+import { dateKeySchema, idSchema, optionalText, timestampSchema } from '@/lib/validation';
 
 export const PERIOD_TYPES = ['daily', 'weekly', 'monthly'] as const;
 export type PeriodType = (typeof PERIOD_TYPES)[number];
@@ -27,6 +27,12 @@ export const reviewSchema = z.object({
   /** Focus for the next period: tomorrow, next week, or next month. */
   focus: z.string().trim().max(1000),
   rating: z.number().int().min(1).max(5).optional(),
+  /* Optional deeper prompts (daily). Absent means not answered. */
+  deepUnderstanding: optionalText(5000),
+  selfInsight: optionalText(5000),
+  distractionTrigger: optionalText(2000),
+  /** The smallest useful thing to do tomorrow if the day is hard. */
+  minimumPlan: optionalText(1000),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 });
@@ -62,6 +68,10 @@ export const reviewDraftSchema = z.object({
   improvements: reflection.default(''),
   focus: z.string().trim().max(1000).default(''),
   rating: z.number().int().min(1, 'Rate from 1 to 5').max(5, 'Rate from 1 to 5').optional(),
+  deepUnderstanding: optionalText(5000),
+  selfInsight: optionalText(5000),
+  distractionTrigger: optionalText(2000),
+  minimumPlan: optionalText(1000),
   actions: z
     .array(
       z.object({

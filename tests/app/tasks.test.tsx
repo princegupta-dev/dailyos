@@ -83,7 +83,7 @@ describe('tasks UI', () => {
   it('quick capture saves a task to the inbox', async () => {
     const user = userEvent.setup();
     renderApp('/');
-    await user.click(await screen.findByRole('button', { name: 'Quick capture' }));
+    await user.click(await screen.findByRole('button', { name: 'Capture a note or task' }));
     const dialog = screen.getByRole('dialog', { name: 'Quick capture' });
     await user.click(within(dialog).getByRole('button', { name: 'Task' }));
     await user.type(within(dialog).getByLabelText('Task'), 'Call the bank');

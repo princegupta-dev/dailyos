@@ -14,22 +14,24 @@ beforeEach(async () => {
 });
 
 describe('learning capture', () => {
-  it('quick capture saves a one-line learning note that appears on Today', async () => {
+  it('quick capture saves a one-line note that appears in Insights', async () => {
     const user = userEvent.setup();
     renderApp('/');
-    await user.click(await screen.findByRole('button', { name: 'Quick capture' }));
+    await user.click(await screen.findByRole('button', { name: 'Capture a note or task' }));
     const dialog = screen.getByRole('dialog', { name: 'Quick capture' });
-    expect(within(dialog).getByRole('button', { name: 'Learning' })).toHaveAttribute(
+    expect(within(dialog).getByRole('button', { name: 'Note' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
 
     await user.type(
-      within(dialog).getByLabelText('What did you learn?'),
+      within(dialog).getByLabelText('What did you do or learn?'),
       'Native dialog traps focus for free',
     );
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
+    expect(await screen.findByText('Saved to your journal')).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'Insights' }));
     const recent = await screen.findByRole('region', { name: 'Recent learning' });
     expect(
       await within(recent).findByText('Native dialog traps focus for free'),

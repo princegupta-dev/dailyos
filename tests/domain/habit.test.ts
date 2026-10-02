@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   currentStreak,
+  describeSchedule,
   habitDraftSchema,
+  habitStats,
+  longestStreak,
   habitOccurrences,
   occurrenceFor,
   occurrencesToDate,
@@ -19,6 +22,7 @@ function habit(overrides: Partial<Habit> = {}): Habit {
   return {
     id: HABIT_ID,
     name: 'Read',
+    category: 'reading',
     frequency: 'daily',
     startDate: '2026-09-28',
     position: 0,
@@ -36,6 +40,7 @@ function entry(date: string, status: HabitStatus): HabitEntry {
     habitId: HABIT_ID,
     date,
     status,
+    tags: [],
     createdAt: T,
     updatedAt: T,
   };
@@ -217,5 +222,81 @@ describe('weekly habits', () => {
       0,
     );
     expect(occ).toEqual([{ start: '2026-09-27', end: '2026-10-03', status: 'completed' }]);
+  });
+});
+
+describe('streak rules', () => {
+  // Rules (documented in ARCHITECTURE.md):
+  // - Only scheduled occurrences exist; unscheduled days can't break a streak.
+  // - completed extends a run; skipped is neutral; missed ends a run.
+  // - Today's pending occurrence neither extends nor ends the current streak.
+  const statuses = (...s: ('completed' | 'skipped' | 'missed' | 'pending')[]) =>
+    s.map((status, i) => ({ start: `d${i}`, end: `d${i}`, status }));
+
+  it('computes current and longest streaks with skipped as neutral', () => {
+    const occ = statuses(
+      'completed',
+      'completed',
+      'completed',
+      'missed',
+      'completed',
+      'skipped',
+      'completed',
+      'pending',
+    );
+    expect(currentStreak(occ)).toBe(2);
+    expect(longestStreak(occ)).toBe(3);
+    expect(habitStats(occ)).toEqual({ currentStreak: 2, longestStreak: 3, totalCompletions: 5 });
+  });
+
+  it('resets the current streak after a miss but keeps the longest in history', () => {
+    const occ = statuses('completed', 'completed', 'missed');
+    expect(currentStreak(occ)).toBe(0);
+    expect(longestStreak(occ)).toBe(2);
+  });
+
+  it('does not let unscheduled days break a selected-days streak', () => {
+    const h = habit({ frequency: 'selected_days', weekdays: [1, 3, 5] }); // Mon, Wed, Fri
+    const entries = ['2026-09-28', '2026-09-30', '2026-10-02'].map((d) => entry(d, 'completed'));
+    const occ = occurrencesToDate(h, entries, '2026-10-04', 1); // through Sunday
+    expect(occ.map((o) => o.start)).toEqual(['2026-09-28', '2026-09-30', '2026-10-02']);
+    expect(habitStats(occ)).toEqual({ currentStreak: 3, longestStreak: 3, totalCompletions: 3 });
+  });
+
+  it('never invents completions: unlogged past days stay missed', () => {
+    const h = habit();
+    const occ = occurrencesToDate(h, [entry('2026-09-28', 'completed')], '2026-09-30', 1);
+    expect(occ.map((o) => o.status)).toEqual(['completed', 'missed', 'pending']);
+    expect(currentStreak(occ)).toBe(0);
+  });
+
+  it('resumes through new completions without rewriting the earlier miss', () => {
+    const h = habit();
+    const entries = [
+      entry('2026-09-28', 'completed'),
+      entry('2026-09-30', 'completed'),
+      entry('2026-10-01', 'completed'),
+    ];
+    const occ = occurrencesToDate(h, entries, '2026-10-01', 1);
+    expect(occ.map((o) => o.status)).toEqual(['completed', 'missed', 'completed', 'completed']);
+    expect(habitStats(occ)).toMatchObject({ currentStreak: 2, longestStreak: 2 });
+  });
+
+  it('counts weekly streaks in weeks', () => {
+    const h = habit({ frequency: 'weekly', startDate: '2026-09-14' });
+    const entries = [
+      entry('2026-09-15', 'completed'),
+      entry('2026-09-26', 'completed'),
+      entry('2026-10-01', 'completed'),
+    ];
+    const occ = occurrencesToDate(h, entries, '2026-10-02', 1);
+    expect(habitStats(occ)).toEqual({ currentStreak: 3, longestStreak: 3, totalCompletions: 3 });
+  });
+
+  it('describes Monday–Friday as weekdays', () => {
+    expect(describeSchedule({ frequency: 'selected_days', weekdays: [1, 2, 3, 4, 5] })).toBe(
+      'Weekdays',
+    );
+    expect(describeSchedule({ frequency: 'selected_days', weekdays: [1, 3] })).toBe('Mon, Wed');
   });
 });

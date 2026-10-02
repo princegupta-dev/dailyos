@@ -19,6 +19,7 @@ function entry(overrides: Partial<LearningEntry>): LearningEntry {
     format: 'quick',
     content: '',
     relatedTaskIds: [],
+    tags: [],
     capturedAt: `2026-10-0${Math.min(n, 9)}T10:00:00.000Z`,
     capturedDate: `2026-10-0${Math.min(n, 9)}`,
     updatedAt: '2026-10-01T10:00:00.000Z',

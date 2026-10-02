@@ -1,7 +1,7 @@
 # Architecture
 
 DailyOS is a frontend-only, local-first PWA. The browser is the whole system: there is no server,
-account, or sync in the MVP. A future HTTP API will be described in `API_CONTRACT.md`. The
+account, or sync in the MVP. A future HTTP API is described in [API_CONTRACT.md](API_CONTRACT.md). The
 current app never calls it.
 
 ## Layers

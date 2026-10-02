@@ -14,7 +14,7 @@ describe('app navigation', () => {
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     const links = within(nav).getAllByRole('link');
 
-    expect(links.map((l) => l.textContent)).toEqual(['Today', 'Tasks', 'Learn', 'Review']);
+    expect(links.map((l) => l.textContent)).toEqual(['Today', 'Habits', 'Insights', 'Review']);
     expect(within(nav).getByRole('link', { name: 'Today' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -26,19 +26,40 @@ describe('app navigation', () => {
     renderAt('/');
     const nav = screen.getByRole('navigation', { name: 'Primary' });
 
-    await user.click(within(nav).getByRole('link', { name: 'Tasks' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Tasks' })).toHaveAttribute(
+    await user.click(within(nav).getByRole('link', { name: 'Habits' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Habits' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Habits' })).toHaveAttribute(
       'aria-current',
       'page',
     );
     expect(within(nav).getByRole('link', { name: 'Today' })).not.toHaveAttribute('aria-current');
 
-    await user.click(within(nav).getByRole('link', { name: 'Learn' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Learn' })).toBeInTheDocument();
+    await user.click(within(nav).getByRole('link', { name: 'Insights' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Insights' })).toBeInTheDocument();
 
     await user.click(within(nav).getByRole('link', { name: 'Review' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Review' })).toBeInTheDocument();
+  });
+
+  it('keeps Tasks and Learn reachable as secondary screens with their parent tab active', async () => {
+    const user = userEvent.setup();
+    renderAt('/insights');
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+
+    await user.click(await screen.findByRole('link', { name: /Notes and learning/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Learn' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Insights' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    await user.click(within(nav).getByRole('link', { name: 'Insights' }));
+    await user.click(await screen.findByRole('link', { name: /^Tasks/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Tasks' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Today' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   it('reaches Settings from Today and returns', async () => {
@@ -47,9 +68,18 @@ describe('app navigation', () => {
 
     await user.click(screen.getByRole('link', { name: 'Settings' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Manage habits/ })).toHaveAttribute('href', '/habits');
 
     await user.click(screen.getByRole('link', { name: 'Back to Today' }));
-    expect(screen.getByText('Today', { selector: '.page-header__eyebrow' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Habits' })).toBeInTheDocument();
+  });
+
+  it('redirects old habit links from Settings to the Habits screens', async () => {
+    const { router } = renderAt('/settings/habits/new');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Create habit' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/habits/new');
   });
 
   it('shows a not-found screen for unknown paths', () => {
@@ -58,35 +88,24 @@ describe('app navigation', () => {
   });
 });
 
-describe('Today dashboard', () => {
-  it('renders every dashboard section', async () => {
+describe('Today', () => {
+  it('shows only the daily essentials', async () => {
     renderAt('/');
-    await screen.findByText('Nothing planned for today');
-    await screen.findByText('No habits for today');
+    await screen.findByText('No habits scheduled today');
 
-    for (const name of [
-      'Intention',
-      'Top outcomes',
-      'Tasks',
-      'Habits',
-      'Recent learning',
-      'Evening review',
-    ]) {
+    for (const name of ['Habits', 'Intention', 'Priorities', 'Tasks', 'Evening review']) {
       expect(screen.getByRole('region', { name })).toBeInTheDocument();
     }
-    expect(
-      within(screen.getByRole('region', { name: 'Top outcomes' })).getAllByRole('listitem'),
-    ).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Quick capture' })).toBeEnabled();
+    expect(screen.queryByRole('region', { name: 'Recent learning' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Capture a note or task' })).toBeEnabled();
+    expect(screen.getByRole('link', { name: 'All tasks' })).toHaveAttribute('href', '/tasks');
   });
 
-  it('shows the current local date as the page title', () => {
+  it('shows the current local date in the header', () => {
     renderAt('/');
-    const expected = new Intl.DateTimeFormat(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    }).format(new Date());
+    const expected = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' }).format(
+      new Date(),
+    );
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(expected);
   });
 });
