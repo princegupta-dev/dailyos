@@ -39,3 +39,15 @@ export function formatMinutes(minutes: number): string {
   const rest = minutes % 60;
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
+
+/** A timestamp with its year, e.g. "Oct 2, 2026, 3:05 PM", for records that may be old. */
+export function formatFullTimestamp(iso: string, timeZone: string, locale?: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}

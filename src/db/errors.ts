@@ -28,9 +28,17 @@ export class AppError extends Error {
 
 function errorName(error: unknown): string | undefined {
   if (typeof error !== 'object' || error === null) return undefined;
-  const { name, inner } = error as { name?: unknown; inner?: unknown };
+  const { name, inner, failures } = error as {
+    name?: unknown;
+    inner?: unknown;
+    failures?: unknown;
+  };
   // Dexie wraps native DOMExceptions; the original is on `inner`.
   if (name === 'QuotaExceededError' || name === 'ConstraintError') return name;
+  // Bulk writes report each failed record in `failures`; the first one explains the problem.
+  if (name === 'BulkError' && Array.isArray(failures) && failures.length > 0) {
+    return errorName((failures as unknown[]).find((f) => f !== undefined)) ?? name;
+  }
   if (inner !== undefined) return errorName(inner) ?? (typeof name === 'string' ? name : undefined);
   return typeof name === 'string' ? name : undefined;
 }

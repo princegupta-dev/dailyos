@@ -98,7 +98,11 @@ describe('Today', () => {
     }
     expect(screen.queryByRole('region', { name: 'Recent learning' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Capture a note or task' })).toBeEnabled();
-    expect(screen.getByRole('link', { name: 'All tasks' })).toHaveAttribute('href', '/tasks');
+    // Each section loads independently, so wait for Tasks too.
+    expect(await screen.findByRole('link', { name: 'All tasks' })).toHaveAttribute(
+      'href',
+      '/tasks',
+    );
   });
 
   it('shows the current local date in the header', () => {

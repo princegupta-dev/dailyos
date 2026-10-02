@@ -162,6 +162,26 @@ anyway. Instead, DailyOS closes the connection and asks for a reload, leaving th
 untouched. Migration tests upgrade every earlier version to the current one with data in
 place.
 
+### Backup and restore
+
+A backup is one JSON file: `{ format: "dailyos-backup", schemaVersion, exportedAt, data }`,
+where `data` holds every table, read in a single transaction (`db/repositories/backup.ts`).
+
+Restoring is check first, write second (`domain/backup.ts`):
+
+- The file must be a DailyOS backup from this schema version or older. Newer files are refused,
+  just like a newer database. Older files are upgraded with the same defaults as the migrations.
+- Every record is validated with the same Zod schemas the app uses, then checked for duplicate
+  ids, duplicate days or periods, and references to records missing from the file. Any problem
+  rejects the whole file, and nothing is written.
+- **Add what's new** (the default) keeps everything on the device. It adds records whose id isn't
+  here, except a plan, check-in or review for a day or period this device already has; children
+  of a skipped record are skipped too, so nothing is orphaned. The preview and the restore use
+  the same calculation.
+- **Replace everything** asks for confirmation, then clears every table and writes the backup.
+- Both run in one transaction across all tables, so a failure (for example, storage full) leaves
+  the device exactly as it was.
+
 ## Dates and time
 
 - A **date key** (`YYYY-MM-DD`) identifies a local calendar day. It is always derived from an

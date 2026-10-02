@@ -1,8 +1,8 @@
-import { ArrowLeft, ChevronRight, HardDrive } from 'lucide-react';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router';
-import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/PageHeader';
 import { Section } from '@/components/Section';
+import { DataSettings } from './DataSettings';
 import { DateTimeSettings } from './DateTimeSettings';
 
 export function SettingsPage() {
@@ -33,13 +33,7 @@ export function SettingsPage() {
 
       <DateTimeSettings />
 
-      <Section title="Your data">
-        <EmptyState
-          icon={HardDrive}
-          title="Stored only on this device"
-          description="DailyOS keeps everything in this browser’s local storage. Backup export and restore are not available yet in this build."
-        />
-      </Section>
+      <DataSettings />
     </>
   );
 }
