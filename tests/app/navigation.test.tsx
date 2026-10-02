@@ -1,14 +1,12 @@
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router';
-import { describe, expect, it } from 'vitest';
-import { routes } from '@/app/routes';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { resetDatabase } from '../helpers/db';
+import { renderApp as renderAt } from '../helpers/render';
 
-function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  render(<RouterProvider router={router} />);
-  return router;
-}
+beforeEach(async () => {
+  await resetDatabase(Intl.DateTimeFormat().resolvedOptions().timeZone);
+});
 
 describe('app navigation', () => {
   it('shows the four primary destinations with Today active by default', () => {
@@ -61,8 +59,9 @@ describe('app navigation', () => {
 });
 
 describe('Today dashboard', () => {
-  it('renders every dashboard section with honest empty states', () => {
+  it('renders every dashboard section', async () => {
     renderAt('/');
+    await screen.findByText('Nothing planned for today');
 
     for (const name of [
       'Intention',
@@ -77,9 +76,7 @@ describe('Today dashboard', () => {
     expect(
       within(screen.getByRole('region', { name: 'Top outcomes' })).getAllByRole('listitem'),
     ).toHaveLength(3);
-    // Capture is not implemented yet, so the control must not pretend to work.
-    expect(screen.getByRole('button', { name: 'Quick capture' })).toBeDisabled();
-    expect(screen.getByText('Preview build')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quick capture' })).toBeEnabled();
   });
 
   it('shows the current local date as the page title', () => {
