@@ -11,7 +11,7 @@ Your records will live in your browser's IndexedDB, and you'll be able to export
 
 ## Status
 
-Tasks and daily task planning work and are saved locally. Screens that aren't built yet say
+Tasks, daily planning (intention, top outcomes, planned tasks), and habits work and are saved locally. Screens that aren't built yet say
 so explicitly.
 
 | Milestone                         | Status      |

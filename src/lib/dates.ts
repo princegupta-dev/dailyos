@@ -93,3 +93,31 @@ export function weekdayOf(dateKey: string): number {
 export function daysBetween(from: string, to: string): number {
   return Math.round((parseDateKey(to).getTime() - parseDateKey(from).getTime()) / 86_400_000);
 }
+
+/** First day of the week containing `dateKey`, for weeks starting on `weekStartsOn` (0 = Sunday). */
+export function startOfWeek(dateKey: string, weekStartsOn: number): string {
+  return addDays(dateKey, -((weekdayOf(dateKey) - weekStartsOn + 7) % 7));
+}
+
+/** Every date key from `from` to `to`, inclusive. Empty when `to` is before `from`. */
+export function eachDay(from: string, to: string): string[] {
+  const days: string[] = [];
+  for (let day = from; day <= to; day = addDays(day, 1)) days.push(day);
+  return days;
+}
+
+export function startOfMonth(dateKey: string): string {
+  return `${dateKey.slice(0, 7)}-01`;
+}
+
+export function endOfMonth(dateKey: string): string {
+  const [year, month] = dateKey.split('-').map(Number) as [number, number];
+  // Day 0 of the next month is the last day of this month.
+  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+}
+
+export function addMonths(dateKey: string, months: number): string {
+  const [year, month] = dateKey.split('-').map(Number) as [number, number];
+  const first = new Date(Date.UTC(year, month - 1 + months, 1));
+  return first.toISOString().slice(0, 10);
+}

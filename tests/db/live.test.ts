@@ -1,6 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { subscribeLive } from '@/db/live';
-import { getDayPlan, listUnfinishedFromEarlier, planTask } from '@/db/repositories/plans';
+import {
+  createHabit,
+  getHabitDetail,
+  getHabitsForDay,
+  listHabits,
+  setHabitStatus,
+} from '@/db/repositories/habits';
+import {
+  getDayPlan,
+  getPlan,
+  listUnfinishedFromEarlier,
+  planTask,
+  updatePlanDetails,
+} from '@/db/repositories/plans';
 import { getSettings, updateSettings } from '@/db/repositories/settings';
 import {
   completeTask,
@@ -95,5 +108,27 @@ describe('live queries re-run after writes', () => {
     await until(() => values.length === 1);
     await updateSettings({ weekStartsOn: 0 });
     await until(() => values.at(-1)?.weekStartsOn === 0);
+  });
+
+  it('getPlan', async () => {
+    const values = observe(() => getPlan(today()));
+    await until(() => values.length === 1);
+    await updatePlanDetails(today(), { intention: 'Focus' });
+    await until(() => values.at(-1)?.intention === 'Focus');
+  });
+
+  it('habit reads', async () => {
+    const list = observe(() => listHabits());
+    const day = observe(() => getHabitsForDay(today(), today(), 1));
+    await until(() => list.length === 1 && day.length === 1);
+    const habit = await createHabit({ name: 'Read', frequency: 'daily' });
+    await until(() => list.at(-1)?.length === 1 && day.at(-1)?.length === 1);
+    const detail = observe(() => getHabitDetail(habit.id));
+    await until(() => detail.length === 1);
+    await setHabitStatus(habit.id, today(), 'completed');
+    await until(
+      () =>
+        day.at(-1)?.[0]?.occurrence.status === 'completed' && detail.at(-1)?.entries.length === 1,
+    );
   });
 });

@@ -1,4 +1,4 @@
-import { BookOpen, Moon, Plus, Repeat, Settings, Target } from 'lucide-react';
+import { BookOpen, Moon, Plus, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -6,10 +6,10 @@ import { PageHeader } from '@/components/PageHeader';
 import { Section } from '@/components/Section';
 import { useToday } from '@/hooks/useToday';
 import { formatDateKey } from '@/lib/dates';
+import { TodayHabits } from '../habits/TodayHabits';
+import { DailyIntention } from '../planning/DailyIntention';
 import { TodayTasks } from '../planning/TodayTasks';
 import { QuickCaptureDialog } from './QuickCaptureDialog';
-
-const OUTCOME_SLOTS = [1, 2, 3] as const;
 
 export function TodayPage() {
   const today = useToday();
@@ -40,38 +40,11 @@ export function TodayPage() {
         </button>
       </div>
 
-      <Section title="Intention">
-        <EmptyState
-          icon={Target}
-          title="No intention yet"
-          description="Setting a daily intention is not available yet in this build."
-        />
-      </Section>
-
-      <Section title="Top outcomes">
-        <ol className="outcome-list">
-          {OUTCOME_SLOTS.map((n) => (
-            <li key={n} className="outcome-list__item">
-              <span className="outcome-list__number" aria-hidden="true">
-                {n}
-              </span>
-              <span>
-                <span className="visually-hidden">Outcome {n}: </span>Not set
-              </span>
-            </li>
-          ))}
-        </ol>
-      </Section>
+      <DailyIntention date={today} />
 
       <TodayTasks today={today} />
 
-      <Section title="Habits">
-        <EmptyState
-          icon={Repeat}
-          title="No habits configured"
-          description="Habit tracking is not available yet in this build."
-        />
-      </Section>
+      <TodayHabits today={today} />
 
       <Section title="Recent learning">
         <EmptyState

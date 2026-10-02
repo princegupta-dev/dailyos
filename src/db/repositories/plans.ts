@@ -1,17 +1,23 @@
 import {
+  dailyPlanSchema,
   derivePlanItemOutcome,
   type DailyPlan,
   type PlanItem,
   type PlanItemOutcome,
 } from '@/domain/plan';
-import { isOpen, type Task, type TaskEvent } from '@/domain/task';
+import { groupBy } from '@/lib/collections';
+import { addDays } from '@/lib/dates';
+import { newId } from '@/lib/ids';
+import { isOpen, type Task } from '@/domain/task';
 import { db } from '../database';
 import { AppError } from '../errors';
 import {
   activeItemFor,
   addPlanItem,
   buildEvent,
+  ensurePlan,
   guard,
+  parseInput,
   requireTask,
   writeContext,
 } from './internal';
@@ -35,17 +41,6 @@ export interface DayPlan {
   entries: DayPlanEntry[];
 }
 
-/** Groups events by task id. */
-export function eventsByTask(events: readonly TaskEvent[]): Map<string, TaskEvent[]> {
-  const grouped = new Map<string, TaskEvent[]>();
-  for (const event of events) {
-    const list = grouped.get(event.taskId);
-    if (list) list.push(event);
-    else grouped.set(event.taskId, [event]);
-  }
-  return grouped;
-}
-
 /**
  * The plan for `date` with each planned item's task and derived outcome. `today` decides
  * whether an unfinished item is still open or was not done. Reads call Dexie directly so
@@ -61,7 +56,7 @@ export async function getDayPlan(date: string, today: string): Promise<DayPlan> 
   const taskList = await db.tasks.bulkGet(taskIds);
   const eventList = await db.taskEvents.where('taskId').anyOf(taskIds).toArray();
   const tasks = new Map(taskList.flatMap((t) => (t ? [[t.id, t] as const] : [])));
-  const events = eventsByTask(eventList);
+  const events = groupBy(eventList, (e) => e.taskId);
 
   const entries = items.flatMap((item) => {
     const task = tasks.get(item.taskId);
@@ -70,6 +65,39 @@ export async function getDayPlan(date: string, today: string): Promise<DayPlan> 
     return [{ item, task, outcome }];
   });
   return plan ? { date, plan, entries } : { date, entries };
+}
+
+export interface PlanDetailsPatch {
+  intention?: string;
+  /** Outcomes in order; blank ones are dropped. New outcomes may omit `id`. */
+  topOutcomes?: { id?: string | undefined; text: string; done: boolean }[];
+}
+
+/**
+ * Sets the intention and top outcomes for a day, creating the plan if needed. Today and future
+ * plans are editable, and yesterday's too so a late-night review can still tick outcomes off;
+ * anything older is history.
+ */
+export async function updatePlanDetails(date: string, patch: PlanDetailsPatch): Promise<DailyPlan> {
+  return guard(async () => {
+    const ctx = await writeContext();
+    if (date < addDays(ctx.today, -1)) {
+      throw new AppError('invalid_operation', 'Past plans are history and can’t be changed.');
+    }
+    return db.transaction('rw', db.dailyPlans, async () => {
+      const plan = await ensurePlan(ctx, date);
+      const next = { ...plan, updatedAt: ctx.now };
+      if (patch.intention !== undefined) next.intention = patch.intention;
+      if (patch.topOutcomes !== undefined) {
+        next.topOutcomes = patch.topOutcomes
+          .filter((o) => o.text.trim() !== '')
+          .map((o) => ({ id: o.id ?? newId(), text: o.text, done: o.done }));
+      }
+      const validated = parseInput(dailyPlanSchema, next);
+      await db.dailyPlans.put(validated);
+      return validated;
+    });
+  });
 }
 
 /** Places an open task on `date`'s plan. Planning an inbox task moves it to "to do". */
