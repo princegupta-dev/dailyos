@@ -5,6 +5,7 @@ import { LearnPage } from '@/features/learning/LearnPage';
 import { LearningDetailPage } from '@/features/learning/LearningDetailPage';
 import { NewLearningPage } from '@/features/learning/NewLearningPage';
 import { ReviewPage } from '@/features/reviews/ReviewPage';
+import { ReviewPeriodPage } from '@/features/reviews/ReviewPeriodPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { NewTaskPage } from '@/features/tasks/NewTaskPage';
 import { TaskDetailPage } from '@/features/tasks/TaskDetailPage';
@@ -28,6 +29,7 @@ export const routes: RouteObject[] = [
       { path: 'learn/new', element: <NewLearningPage /> },
       { path: 'learn/:entryId', element: <LearningDetailPage /> },
       { path: 'review', element: <ReviewPage /> },
+      { path: 'review/:periodType/:start', element: <ReviewPeriodPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/habits/new', element: <NewHabitPage /> },
       { path: 'settings/habits/:habitId', element: <HabitDetailPage /> },

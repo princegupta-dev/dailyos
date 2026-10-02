@@ -39,6 +39,14 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       learningEntries: 'id, capturedAt, capturedDate, *relatedTaskIds',
     },
   },
+  {
+    version: 4,
+    stores: {
+      // Unique compound index: one review per period.
+      reviews: 'id, &[periodType+periodStart], periodType, periodStart',
+      reviewActions: 'id, reviewId, status',
+    },
+  },
 ];
 
 export const CURRENT_SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 0;

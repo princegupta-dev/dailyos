@@ -119,6 +119,35 @@ lists only the stores it changes.
   permanent and asks for confirmation. Nothing else references learning entries, so deleting
   one can't break other records.
 
+### Reviews and summaries
+
+- **One review per period.** A unique `[periodType+periodStart]` index plus an upsert in one
+  transaction prevents duplicates. Route params are normalized to the real period start (any
+  date in a week opens that week's review). Periods that haven't started can't be reviewed.
+- **Summaries are computed, never stored** (`services/analytics.service.ts`). One flat loader
+  reads the records for a range, and pure functions compute:
+  - **Daily: planned vs. actual.** Each planned item's outcome comes from task history, plus
+    tasks completed without being planned, top outcomes, habit statuses, and learning
+    captured that day.
+  - **Weekly and monthly:**
+    - Tasks completed: distinct tasks with a completion in the range that were still done at
+      its end.
+    - Plan kept: `done / (done + not done + open)`; rescheduled and cancelled items are excluded.
+    - Habit consistency, learning topics, and average daily rating.
+    - Recurring blockers from daily reviews and reschedule notes, grouped ignoring case,
+      accents, bullets, and punctuation.
+  - **Month view:** a week-by-week table, with each week clipped to the month so the weeks add
+    up to the month.
+- **Historical integrity:** summaries use plan snapshots and rebuilt past statuses. Editing,
+  reopening, or rescheduling a task later doesn't change an earlier summary (tested).
+- **Carry-forward without copies:**
+  - Open actions stay where they were created and show in later reviews ("Still open from
+    earlier"), on the Review hub, and on Today until marked done.
+  - An action can be turned into an inbox task, which is linked once.
+  - Each review's "focus for next period" is shown at the top of the following review.
+- **Editing a saved review:** the form remounts whenever the stored review or its actions
+  change, so a later save never resurrects stale action ids or statuses.
+
 ### Daily plans
 
 The intention and up to three top outcomes live on the day's `DailyPlan`, which is created on

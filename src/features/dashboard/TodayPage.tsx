@@ -1,13 +1,12 @@
-import { Moon, Plus, Settings } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/PageHeader';
-import { Section } from '@/components/Section';
 import { useToday } from '@/hooks/useToday';
 import { formatDateKey } from '@/lib/dates';
 import { TodayHabits } from '../habits/TodayHabits';
 import { RecentLearning } from '../learning/RecentLearning';
+import { EveningReview } from '../reviews/EveningReview';
 import { DailyIntention } from '../planning/DailyIntention';
 import { TodayTasks } from '../planning/TodayTasks';
 import { QuickCaptureDialog } from './QuickCaptureDialog';
@@ -49,13 +48,7 @@ export function TodayPage() {
 
       <RecentLearning today={today} />
 
-      <Section title="Evening review">
-        <EmptyState
-          icon={Moon}
-          title="Reflect at the end of the day"
-          description="Daily reviews are not available yet in this build."
-        />
-      </Section>
+      <EveningReview today={today} />
 
       {capturing && (
         <QuickCaptureDialog
