@@ -2,6 +2,8 @@ import type { RouteObject } from 'react-router';
 import { HabitDetailPage } from '@/features/habits/HabitDetailPage';
 import { NewHabitPage } from '@/features/habits/NewHabitPage';
 import { LearnPage } from '@/features/learning/LearnPage';
+import { LearningDetailPage } from '@/features/learning/LearningDetailPage';
+import { NewLearningPage } from '@/features/learning/NewLearningPage';
 import { ReviewPage } from '@/features/reviews/ReviewPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { NewTaskPage } from '@/features/tasks/NewTaskPage';
@@ -23,6 +25,8 @@ export const routes: RouteObject[] = [
       { path: 'tasks/new', element: <NewTaskPage /> },
       { path: 'tasks/:taskId', element: <TaskDetailPage /> },
       { path: 'learn', element: <LearnPage /> },
+      { path: 'learn/new', element: <NewLearningPage /> },
+      { path: 'learn/:entryId', element: <LearningDetailPage /> },
       { path: 'review', element: <ReviewPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/habits/new', element: <NewHabitPage /> },

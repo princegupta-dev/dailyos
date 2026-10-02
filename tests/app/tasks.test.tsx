@@ -85,6 +85,7 @@ describe('tasks UI', () => {
     renderApp('/');
     await user.click(await screen.findByRole('button', { name: 'Quick capture' }));
     const dialog = screen.getByRole('dialog', { name: 'Quick capture' });
+    await user.click(within(dialog).getByRole('button', { name: 'Task' }));
     await user.type(within(dialog).getByLabelText('Task'), 'Call the bank');
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 

@@ -32,6 +32,13 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       habitEntries: 'id, &[habitId+date], habitId, date',
     },
   },
+  {
+    version: 3,
+    stores: {
+      // Multi-entry index lets a task find the learning entries that reference it.
+      learningEntries: 'id, capturedAt, capturedDate, *relatedTaskIds',
+    },
+  },
 ];
 
 export const CURRENT_SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 0;

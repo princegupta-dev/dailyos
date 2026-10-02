@@ -1,4 +1,4 @@
-import { BookOpen, Moon, Plus, Settings } from 'lucide-react';
+import { Moon, Plus, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -7,6 +7,7 @@ import { Section } from '@/components/Section';
 import { useToday } from '@/hooks/useToday';
 import { formatDateKey } from '@/lib/dates';
 import { TodayHabits } from '../habits/TodayHabits';
+import { RecentLearning } from '../learning/RecentLearning';
 import { DailyIntention } from '../planning/DailyIntention';
 import { TodayTasks } from '../planning/TodayTasks';
 import { QuickCaptureDialog } from './QuickCaptureDialog';
@@ -46,13 +47,7 @@ export function TodayPage() {
 
       <TodayHabits today={today} />
 
-      <Section title="Recent learning">
-        <EmptyState
-          icon={BookOpen}
-          title="No captures yet"
-          description="Learning capture is not available yet in this build."
-        />
-      </Section>
+      <RecentLearning today={today} />
 
       <Section title="Evening review">
         <EmptyState

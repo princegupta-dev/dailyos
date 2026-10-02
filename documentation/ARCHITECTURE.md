@@ -101,6 +101,24 @@ lists only the stores it changes.
 - **Known limitation:** editing a habit's schedule re-evaluates its past occurrences under the
   new schedule. Entries themselves are never changed.
 
+### Learning journal
+
+- **Quick captures need one sentence.** The title is optional and falls back to the first line.
+  An entry's `format` is derived: filling any structured field (explanation, example,
+  questions, application, source) makes it `structured`.
+- **Topics** are free text, whitespace-normalized, and matched case- and accent-insensitively.
+- **Search runs in memory** over all entries: every term must appear in some field. A
+  personal journal stays in the thousands of entries, where scanning is fast and avoids
+  maintaining a full-text index in IndexedDB.
+- **Review dates** are a list of `{ date, completedAt? }`. Entries due on or before today show
+  under "Due for review" until each date is ticked off. Editing an entry keeps the completion
+  state of review dates that stay scheduled.
+- **Related tasks** are validated on save. A multi-entry index lets a task list the entries
+  that reference it.
+- **Archive vs delete:** archived entries leave lists and search but can be restored. Delete is
+  permanent and asks for confirmation. Nothing else references learning entries, so deleting
+  one can't break other records.
+
 ### Daily plans
 
 The intention and up to three top outcomes live on the day's `DailyPlan`, which is created on

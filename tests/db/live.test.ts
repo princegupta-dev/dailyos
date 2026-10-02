@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { subscribeLive } from '@/db/live';
 import {
+  createLearningEntry,
+  getLearningDetail,
+  listDueReviews,
+  listRecentLearning,
+  searchLearning,
+  setReviewDone,
+} from '@/db/repositories/learning';
+import {
   createHabit,
   getHabitDetail,
   getHabitsForDay,
@@ -129,6 +137,27 @@ describe('live queries re-run after writes', () => {
     await until(
       () =>
         day.at(-1)?.[0]?.occurrence.status === 'completed' && detail.at(-1)?.entries.length === 1,
+    );
+  });
+
+  it('learning reads', async () => {
+    const search = observe(() => searchLearning({ text: 'dexie' }));
+    const recent = observe(() => listRecentLearning(3));
+    const due = observe(() => listDueReviews(today()));
+    await until(() => search.length === 1 && recent.length === 1 && due.length === 1);
+    const entry = await createLearningEntry({ content: 'Dexie tip', reviewDates: [today()] });
+    await until(
+      () =>
+        search.at(-1)?.entries.length === 1 &&
+        recent.at(-1)?.length === 1 &&
+        due.at(-1)?.length === 1,
+    );
+    const detail = observe(() => getLearningDetail(entry.id));
+    await until(() => detail.length === 1);
+    await setReviewDone(entry.id, today(), true);
+    await until(
+      () =>
+        due.at(-1)?.length === 0 && detail.at(-1)?.entry.reviewDates[0]?.completedAt !== undefined,
     );
   });
 });
