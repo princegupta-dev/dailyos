@@ -34,12 +34,20 @@ export interface SettingsPatch {
   timeZone?: string | null;
   weekStartsOn?: 0 | 1;
   lastBackupAt?: string;
+  /** Empty or `null` removes the name. */
+  displayName?: string | null;
 }
 
 export async function updateSettings(patch: SettingsPatch): Promise<Settings> {
   if (typeof patch.timeZone === 'string' && !isSupportedTimeZone(patch.timeZone)) {
     throw new AppError('validation', `Unknown time zone: ${patch.timeZone}`, {
       issues: [{ path: 'timeZone', message: 'Unknown time zone' }],
+    });
+  }
+  const name = typeof patch.displayName === 'string' ? patch.displayName.trim() : undefined;
+  if (name !== undefined && name.length > 40) {
+    throw new AppError('validation', 'Use 40 characters or fewer', {
+      issues: [{ path: 'displayName', message: 'Use 40 characters or fewer' }],
     });
   }
   try {
@@ -50,6 +58,8 @@ export async function updateSettings(patch: SettingsPatch): Promise<Settings> {
       else if (patch.timeZone !== undefined) next.timeZone = patch.timeZone;
       if (patch.weekStartsOn !== undefined) next.weekStartsOn = patch.weekStartsOn;
       if (patch.lastBackupAt !== undefined) next.lastBackupAt = patch.lastBackupAt;
+      if (patch.displayName === null || name === '') delete next.displayName;
+      else if (name !== undefined) next.displayName = name;
       await db.settings.put(next);
       return next;
     });

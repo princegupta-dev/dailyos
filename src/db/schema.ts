@@ -76,6 +76,14 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
         });
     },
   },
+  {
+    // Per-habit and per-task reflections in the daily review. New store only.
+    version: 6,
+    stores: {
+      // Unique compound index: one reflection per habit or task per date.
+      itemReflections: 'id, &[subjectType+subjectId+date], date',
+    },
+  },
 ];
 
 export const CURRENT_SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 0;

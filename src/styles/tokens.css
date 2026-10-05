@@ -22,24 +22,65 @@
   --color-text-muted: #5e6660;
   --color-subtle: #767e78;
   --color-danger: #a8433a;
+  --color-danger-strong: #923a32;
   --color-danger-soft: #f8e9e6;
   --color-focus: #4a6b4f;
+  /* Translucent variants of the palette above, for focus halos and frosted bars. */
+  --color-primary-ring: rgb(74 107 79 / 18%);
+  /* Start and end of the ripple that spreads from a box as it's ticked. */
+  --color-primary-burst: rgb(74 107 79 / 45%);
+  --color-primary-burst-end: rgb(74 107 79 / 0%);
+  --color-danger-ring: rgb(168 67 58 / 16%);
+  --color-surface-glass: rgb(253 252 249 / 86%);
+  --color-bg-glass: rgb(246 244 238 / 86%);
+  --color-hover: rgb(31 36 32 / 4%);
+  --color-hover-on-dark: rgb(255 255 255 / 14%);
+  --color-backdrop: rgb(29 34 31 / 38%);
+  /* Primary lightened for use on the dark toast surface. */
+  --color-primary-on-dark: #b9d1b4;
+  --color-pressed: rgb(31 36 32 / 7%);
 
-  /* Category accents: soft tile background + readable icon color. */
-  --cat-engineering-bg: #e5ecf6;
-  --cat-engineering-fg: #3f5f8a;
-  --cat-dsa-bg: #ece6f5;
-  --cat-dsa-fg: #644b8c;
-  --cat-fitness-bg: #f8e6e2;
-  --cat-fitness-fg: #a14a3c;
-  --cat-reading-bg: #f8ecdb;
-  --cat-reading-fg: #976122;
-  --cat-career-bg: #e3efe9;
-  --cat-career-fg: #2f6b52;
-  --cat-attention-bg: #f4e4ee;
-  --cat-attention-fg: #8f4370;
-  --cat-other-bg: #ebeae4;
-  --cat-other-fg: #5e6660;
+  /* Supporting accents. Warm is reserved for priority and attention cues; dusk (a deep
+     sage) for reflective surfaces such as the evening review. White text stays at least
+     6:1 across --gradient-dusk. */
+  --color-warm: #976122;
+  --color-warm-soft: #f8ecdb;
+  --color-dusk: #2c4231;
+  --color-dusk-soft: #e3eadf;
+  /* Text and lines on dusk surfaces. Muted text stays above 7:1 on the darkest stop. */
+  --color-on-dark-muted: rgb(255 255 255 / 82%);
+  --color-on-dark-line: rgb(255 255 255 / 22%);
+  --color-on-dark-fill: rgb(255 255 255 / 9%);
+
+  /* Gradients built only from the palette above. */
+  --gradient-brand: linear-gradient(135deg, #38543d 0%, #4a6b4f 50%, #6b8758 100%);
+  --gradient-dusk: linear-gradient(150deg, #2c4231 0%, #38543d 55%, #4a6b4f 100%);
+  --gradient-glow: radial-gradient(
+    120% 120% at 100% 0%,
+    rgb(74 107 79 / 14%) 0%,
+    rgb(151 97 34 / 5%) 45%,
+    transparent 70%
+  );
+
+  /* Tones for habit tiles: soft background + icon color. Every pair is at least 4.5:1. */
+  --tone-sage-bg: #e3efe9;
+  --tone-sage-fg: #2f6b52;
+  --tone-teal-bg: #dcefee;
+  --tone-teal-fg: #1f6766;
+  --tone-ocean-bg: #e5ecf6;
+  --tone-ocean-fg: #3f5f8a;
+  --tone-indigo-bg: #e6e7f5;
+  --tone-indigo-fg: #4a4f93;
+  --tone-violet-bg: #ece6f5;
+  --tone-violet-fg: #644b8c;
+  --tone-rose-bg: #f4e4ee;
+  --tone-rose-fg: #8f4370;
+  --tone-coral-bg: #f8e6e2;
+  --tone-coral-fg: #a14a3c;
+  --tone-amber-bg: #f8ecdb;
+  --tone-amber-fg: #976122;
+  --tone-slate-bg: #ebeae4;
+  --tone-slate-fg: #5e6660;
 
   /* Typography — system fonts only, so nothing is fetched over the network. */
   --font-sans:
@@ -47,6 +88,9 @@
     sans-serif;
   --font-display:
     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  /* Used sparingly, in italic, for personal and reflective text. */
+  --font-serif:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'New York', Georgia, 'Times New Roman', serif;
 
   --text-xs: 0.8125rem;
   --text-sm: 0.9375rem;
@@ -72,8 +116,23 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgb(31 36 32 / 5%);
-  --shadow-md: 0 4px 16px rgb(31 36 32 / 8%);
+  --shadow-sm: 0 1px 2px rgb(31 36 32 / 4%), 0 1px 1px rgb(31 36 32 / 2%);
+  --shadow-md: 0 6px 20px -6px rgb(31 36 32 / 12%), 0 2px 6px rgb(31 36 32 / 4%);
+  --shadow-lg: 0 24px 48px -16px rgb(31 36 32 / 24%), 0 6px 16px rgb(31 36 32 / 6%);
+  /* Filled buttons: a top highlight and a soft drop. */
+  --shadow-filled: inset 0 1px 0 rgb(255 255 255 / 12%), 0 1px 2px rgb(31 36 32 / 12%);
+  /* A green glow under selected primary controls. */
+  --shadow-primary: 0 2px 8px -2px rgb(74 107 79 / 40%);
+  --shadow-primary-lift: 0 8px 20px -6px rgb(74 107 79 / 55%);
+  --glow-primary: drop-shadow(0 0 10px rgb(74 107 79 / 35%));
+  --shadow-inset: inset 0 1px 2px rgb(31 36 32 / 3%);
+  --shadow-knob: 0 1px 3px rgb(31 36 32 / 20%);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 120ms;
+  --duration: 180ms;
+  --duration-slow: 260ms;
 
   /* Layout */
   --touch-target: 44px;

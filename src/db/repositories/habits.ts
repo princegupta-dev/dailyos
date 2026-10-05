@@ -30,14 +30,20 @@ async function requireHabit(id: string): Promise<Habit> {
 }
 
 export async function createHabit(draft: HabitDraft): Promise<Habit> {
-  const fields = parseInput(habitDraftSchema, draft);
+  const { startDate, ...fields } = parseInput(habitDraftSchema, draft);
   return guard(async () => {
     const ctx = await writeContext();
+    // A habit can start today or later, never in the past: past days would count as missed.
+    if (startDate !== undefined && startDate < ctx.today) {
+      throw new AppError('validation', 'Some fields need attention.', {
+        issues: [{ path: 'startDate', message: 'Pick today or a later day' }],
+      });
+    }
     return db.transaction('rw', db.habits, async () => {
       const habit: Habit = compact({
         id: newId(),
         ...fields,
-        startDate: ctx.today,
+        startDate: startDate ?? ctx.today,
         position: await db.habits.count(),
         createdAt: ctx.now,
         updatedAt: ctx.now,
@@ -68,7 +74,13 @@ export async function updateHabit(id: string, draft: HabitDraft): Promise<Habit>
         description: undefined,
         target: undefined,
         minimumTarget: undefined,
+        icon: undefined,
+        tone: undefined,
+        timeOfDay: undefined,
+        cue: undefined,
         ...fields,
+        // The start date is set once, at creation; editing never moves it.
+        startDate: habit.startDate,
         updatedAt: ctx.now,
       });
       await db.habits.put(updated);
@@ -238,6 +250,27 @@ export async function getWeekConsistency(
     counted: summary.completed + summary.missed,
     rate: summary.rate,
   };
+}
+
+/**
+ * Each habit's occurrences over the last `days` days through `today`, keyed by habit id, for
+ * recent-activity displays. Weekly habits contribute the weeks that start inside the range.
+ */
+export async function getRecentOccurrences(
+  today: string,
+  weekStartsOn: number,
+  days = 30,
+): Promise<Map<string, Occurrence[]>> {
+  const from = addDays(today, -(days - 1));
+  const habits = await db.habits.toArray();
+  const entries = await db.habitEntries.where('date').between(from, today, true, true).toArray();
+  const byHabit = groupBy(entries, (e) => e.habitId);
+  return new Map(
+    habits.map((h) => [
+      h.id,
+      habitOccurrences(h, byHabit.get(h.id) ?? [], from, today, today, weekStartsOn),
+    ]),
+  );
 }
 
 export interface HabitDetail {

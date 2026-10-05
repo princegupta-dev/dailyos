@@ -1,4 +1,6 @@
 import { db } from '@/db/database';
+import type { HabitIconKey, HabitTone } from '@/domain/appearance';
+import type { HabitCategory } from '@/domain/categories';
 import {
   habitOccurrences,
   occurrenceFor,
@@ -16,6 +18,7 @@ import {
   type PlanItem,
   type PlanItemOutcome,
 } from '@/domain/plan';
+import type { ItemReflection } from '@/domain/reflection';
 import type { Review } from '@/domain/review';
 import { statusAtEndOf, type Task, type TaskEvent } from '@/domain/task';
 import { groupBy } from '@/lib/collections';
@@ -39,6 +42,8 @@ export interface PeriodRecords {
   habitEntries: HabitEntry[];
   learning: LearningEntry[];
   dailyReviews: Review[];
+  /** Per-habit and per-task reflections from daily reviews. */
+  itemReflections: ItemReflection[];
 }
 
 /**
@@ -71,6 +76,10 @@ export async function loadPeriodRecords(from: string, to: string): Promise<Perio
   const dailyReviews = (
     await db.reviews.where('periodStart').between(from, to, true, true).toArray()
   ).filter((r) => r.periodType === 'daily');
+  const itemReflections = await db.itemReflections
+    .where('date')
+    .between(from, to, true, true)
+    .toArray();
   return {
     plans,
     planItems,
@@ -81,6 +90,7 @@ export async function loadPeriodRecords(from: string, to: string): Promise<Perio
     habitEntries,
     learning,
     dailyReviews,
+    itemReflections,
   };
 }
 
@@ -108,6 +118,9 @@ export interface PlanCounts {
 export interface HabitResult {
   habitId: string;
   name: string;
+  category: HabitCategory;
+  icon?: HabitIconKey | undefined;
+  tone?: HabitTone | undefined;
   status: OccurrenceStatus;
   weekly: boolean;
 }
@@ -203,6 +216,9 @@ export function computeDailySummary(
           {
             habitId: habit.id,
             name: habit.name,
+            category: habit.category,
+            icon: habit.icon,
+            tone: habit.tone,
             status: occurrence.status,
             weekly: habit.frequency === 'weekly',
           },
@@ -247,6 +263,7 @@ export interface RangeSummary {
     perHabit: { habitId: string; name: string; summary: OccurrenceSummary }[];
   };
   learning: { count: number; topics: { topic: string; count: number }[] };
+  /** Average day rating; `count` is the number of rated days. */
   ratings: { average: number | null; count: number };
   /** Blockers from daily reviews and reschedule notes, most frequent first. */
   blockers: RecurringBlocker[];
@@ -277,6 +294,26 @@ export function groupBlockers(
     (a, b) =>
       b.dates.length - a.dates.length || (b.dates.at(-1) ?? '').localeCompare(a.dates.at(-1) ?? ''),
   );
+}
+
+/**
+ * One rating per reviewed day. A day's rating is the average of its habit and task
+ * ratings; days reviewed before those existed keep the single rating saved for the day.
+ */
+function dayRatings(reviews: readonly Review[], reflections: readonly ItemReflection[]): number[] {
+  const byDate = new Map<string, number[]>();
+  for (const r of reflections) {
+    if (r.rating === undefined) continue;
+    const list = byDate.get(r.date) ?? [];
+    list.push(r.rating);
+    byDate.set(r.date, list);
+  }
+  for (const review of reviews) {
+    if (review.rating !== undefined && !byDate.has(review.periodStart)) {
+      byDate.set(review.periodStart, [review.rating]);
+    }
+  }
+  return [...byDate.values()].map((list) => list.reduce((sum, r) => sum + r, 0) / list.length);
 }
 
 export function computeRangeSummary(
@@ -318,13 +355,17 @@ export function computeRangeSummary(
   const learning = records.learning.filter((e) => inRange(e.capturedDate));
 
   const reviews = records.dailyReviews.filter((r) => inRange(r.periodStart));
-  const rated = reviews.flatMap((r) => (r.rating === undefined ? [] : [r.rating]));
+  const reflections = records.itemReflections.filter((r) => inRange(r.date));
+  const rated = dayRatings(reviews, reflections);
   const plans = records.plans.filter((p) => inRange(p.date));
   const outcomes = plans.flatMap((p) => p.topOutcomes);
 
   const blockerLines = [
     ...reviews.flatMap((r) =>
       r.blockers.split('\n').map((text) => ({ date: r.periodStart, text })),
+    ),
+    ...reflections.flatMap((r) =>
+      (r.gotInTheWay ?? '').split('\n').map((text) => ({ date: r.date, text })),
     ),
     ...records.eventsInRange
       .filter((e) => e.type === 'rescheduled' && e.note !== undefined && inRange(e.localDate))

@@ -1,9 +1,28 @@
-import { ArrowLeft, Pencil } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  BookOpen,
+  CalendarCheck,
+  CircleHelp,
+  Clock,
+  ExternalLink,
+  FlaskConical,
+  Lightbulb,
+  Link2,
+  MessageSquareText,
+  Pencil,
+  Rocket,
+  SquareCheckBig,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ConfirmDialog } from '@/components/Dialog';
 import { LiveView } from '@/components/LiveView';
 import { PageHeader } from '@/components/PageHeader';
+import { ProgressRing } from '@/components/ProgressRing';
 import { Section } from '@/components/Section';
 import {
   deleteLearningEntry,
@@ -14,12 +33,23 @@ import {
   updateLearningEntry,
   type LearningDetail,
 } from '@/db/repositories/learning';
-import { STRUCTURED_FIELDS, STRUCTURED_LABELS } from '@/domain/learning';
+import { STRUCTURED_FIELDS, STRUCTURED_LABELS, type StructuredField } from '@/domain/learning';
 import { useAction } from '@/hooks/useAction';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useTimeZone, useToday } from '@/hooks/useToday';
 import { formatTimestamp, relativeDayLabel } from '@/lib/format';
+import { bodyWithoutTitle, reviewProgress, topicTone } from './learningInsights';
 import { LearningForm } from './LearningForm';
+
+const FIELD_ICONS: Record<StructuredField, LucideIcon> = {
+  explanation: MessageSquareText,
+  example: FlaskConical,
+  questions: CircleHelp,
+  application: Rocket,
+  source: Link2,
+};
+
+const WORDS_PER_MINUTE = 200;
 
 export function LearningDetailPage() {
   const { entryId = '' } = useParams();
@@ -40,6 +70,21 @@ export function LearningDetailPage() {
   );
 }
 
+/** A source that is a web address becomes a link; anything else (a book, a person) stays text. */
+function SourceText({ text }: { text: string }) {
+  const trimmed = text.trim();
+  if (/^https?:\/\/\S+$/i.test(trimmed)) {
+    return (
+      <a href={trimmed} target="_blank" rel="noopener noreferrer" className="learn-source">
+        {trimmed.replace(/^https?:\/\//i, '')}
+        <ExternalLink size={14} aria-hidden="true" />
+        <span className="visually-hidden"> (opens in a new tab)</span>
+      </a>
+    );
+  }
+  return <>{text}</>;
+}
+
 function LearningDetailView({ detail }: { detail: LearningDetail }) {
   const { entry, relatedTasks } = detail;
   const today = useToday();
@@ -50,11 +95,34 @@ function LearningDetailView({ detail }: { detail: LearningDetail }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const topics = useLiveData(useCallback(() => searchLearning({}), []));
   const archived = entry.archivedAt !== undefined;
+  const tone = topicTone(entry.topic);
+  const detailed = entry.format === 'structured';
+  const body = bodyWithoutTitle(entry);
+  const words = [entry.content, ...STRUCTURED_FIELDS.map((f) => entry[f] ?? '')]
+    .join(' ')
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const minutes = Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+  const reviews = reviewProgress(entry);
 
   if (editing) {
     return (
-      <>
-        <PageHeader title="Edit entry" />
+      <div className="learn-form-page">
+        <PageHeader
+          title="Edit entry"
+          leading={
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Stop editing"
+              onClick={() => {
+                setEditing(false);
+              }}
+            >
+              <ArrowLeft size={20} aria-hidden="true" />
+            </button>
+          }
+        />
         <LearningForm
           initial={entry}
           initialRelatedTasks={relatedTasks}
@@ -70,54 +138,141 @@ function LearningDetailView({ detail }: { detail: LearningDetail }) {
             setEditing(false);
           }}
         />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        eyebrow={
-          [entry.topic, archived ? 'Archived' : undefined].filter(Boolean).join(' · ') || 'Learning'
-        }
-        title={entry.title}
-        description={`Captured ${formatTimestamp(entry.capturedAt, timeZone)}`}
-        leading={
-          <Link to="/learn" className="icon-button" aria-label="Back to Learn">
+    <article className="learn-detail">
+      <header className={`learn-hero tone-wash--${tone}`}>
+        <div className="learn-hero__bar">
+          <Link to="/learn" className="icon-button learn-hero__back" aria-label="Back to Learn">
             <ArrowLeft size={20} aria-hidden="true" />
           </Link>
-        }
-      />
+          <button
+            type="button"
+            className="learn-hero__edit"
+            onClick={() => {
+              setEditing(true);
+            }}
+          >
+            <Pencil size={15} aria-hidden="true" /> Edit
+          </button>
+        </div>
+        <div className="learn-hero__identity">
+          <span className={`learn-hero__icon tone--${tone}`} aria-hidden="true">
+            {detailed ? <BookOpen size={24} /> : <Lightbulb size={24} />}
+          </span>
+          <p className="learn-hero__eyebrow">
+            {[entry.topic, archived ? 'Archived' : undefined].filter(Boolean).join(' · ') ||
+              'Learning'}
+          </p>
+        </div>
+        <h1 className="learn-hero__title">{entry.title}</h1>
+        <ul className="learn-hero__chips" aria-label="About this entry">
+          <li className="hero-chip">
+            <CalendarCheck size={13} aria-hidden="true" /> Captured{' '}
+            {formatTimestamp(entry.capturedAt, timeZone)}
+          </li>
+          <li className="hero-chip">
+            <Clock size={13} aria-hidden="true" /> {minutes} min read
+          </li>
+          <li className="hero-chip">{detailed ? 'Detailed note' : 'Quick note'}</li>
+        </ul>
+      </header>
 
-      <div className="action-bar">
-        <button
-          type="button"
-          className="button button--secondary button--compact"
-          onClick={() => {
-            setEditing(true);
-          }}
-        >
-          <Pencil size={16} aria-hidden="true" /> Edit
-        </button>
-      </div>
-
-      {entry.content.trim() !== '' && entry.content.trim() !== entry.title && (
-        <div className="prose preserve-lines">{entry.content}</div>
+      {body !== '' && (
+        <div className="learn-reading">
+          <div className="prose preserve-lines">{body}</div>
+        </div>
       )}
 
       {STRUCTURED_FIELDS.filter((f) => entry[f] !== undefined).map((field) => (
-        <Section key={field} title={STRUCTURED_LABELS[field]}>
-          <div className="prose preserve-lines">{entry[field]}</div>
+        <Section
+          key={field}
+          title={STRUCTURED_LABELS[field]}
+          icon={FIELD_ICONS[field]}
+          className={`learn-field learn-field--${field}`}
+        >
+          <div className="prose preserve-lines learn-field__body">
+            {field === 'source' ? <SourceText text={entry[field] ?? ''} /> : entry[field]}
+          </div>
         </Section>
       ))}
 
+      {entry.reviewDates.length > 0 && (
+        <Section
+          title="Review schedule"
+          icon={CalendarCheck}
+          description="Spaced reviews help it stick."
+          meta={`${reviews.done} of ${reviews.total}`}
+          className="learn-schedule"
+        >
+          <div className="learn-schedule__card">
+            <ProgressRing
+              value={reviews.done}
+              max={reviews.total}
+              size={64}
+              stroke={7}
+              tone="gradient"
+              label={`${reviews.done} of ${reviews.total} reviews done`}
+            >
+              <span className="learn-schedule__fraction">
+                {reviews.done}
+                <span>/{reviews.total}</span>
+              </span>
+            </ProgressRing>
+            <ul className="learn-schedule__list">
+              {entry.reviewDates.map((review) => {
+                const label = relativeDayLabel(review.date, today);
+                const done = review.completedAt !== undefined;
+                const overdue = !done && review.date < today;
+                const upcoming = review.date > today;
+                const state = done ? 'done' : overdue ? 'overdue' : upcoming ? 'upcoming' : 'due';
+                return (
+                  <li
+                    key={review.date}
+                    className={`learn-schedule__item learn-schedule__item--${state}`}
+                  >
+                    <label className="checkbox-field">
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={done}
+                        disabled={pending || (upcoming && !done)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          void run(
+                            () => setReviewDone(entry.id, review.date, checked),
+                            checked ? 'Marked as reviewed' : undefined,
+                          );
+                        }}
+                      />
+                      <span>
+                        {label}
+                        {overdue && <span className="learn-schedule__state"> · overdue</span>}
+                        {upcoming && <span className="learn-schedule__state"> · upcoming</span>}
+                        {state === 'due' && (
+                          <span className="learn-schedule__state"> · due today</span>
+                        )}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </Section>
+      )}
+
       {relatedTasks.length > 0 && (
-        <Section title="Related tasks">
-          <ul className="nav-list">
+        <Section title="Related tasks" icon={SquareCheckBig} className="learn-related">
+          <ul className="learn-related__list">
             {relatedTasks.map((task) => (
               <li key={task.id}>
-                <Link to={`/tasks/${task.id}`} className="nav-list__link">
-                  <span className="nav-list__label">{task.title}</span>
+                <Link to={`/tasks/${task.id}`} className="learn-related__link">
+                  <SquareCheckBig size={16} aria-hidden="true" />
+                  {task.title}
                 </Link>
               </li>
             ))}
@@ -125,67 +280,43 @@ function LearningDetailView({ detail }: { detail: LearningDetail }) {
         </Section>
       )}
 
-      {entry.reviewDates.length > 0 && (
-        <Section title="Review schedule">
-          <ul className="picker-list">
-            {entry.reviewDates.map((review) => {
-              const label = relativeDayLabel(review.date, today);
-              const overdue = review.completedAt === undefined && review.date < today;
-              return (
-                <li key={review.date} className="picker-list__item">
-                  <label className="checkbox-field">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={review.completedAt !== undefined}
-                      disabled={
-                        pending || (review.date > today && review.completedAt === undefined)
-                      }
-                      onChange={(e) => {
-                        const done = e.target.checked;
-                        void run(
-                          () => setReviewDone(entry.id, review.date, done),
-                          done ? 'Marked as reviewed' : undefined,
-                        );
-                      }}
-                    />
-                    <span>
-                      {label}
-                      {overdue && <span className="muted small"> · overdue</span>}
-                      {review.date > today && <span className="muted small"> · upcoming</span>}
-                    </span>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        </Section>
-      )}
-
-      <Section title="Manage">
-        <div className="action-bar">
-          <button
-            type="button"
-            className="button button--secondary button--compact"
-            disabled={pending}
-            onClick={() =>
-              void run(
-                () => setLearningArchived(entry.id, !archived),
-                archived ? 'Entry restored' : 'Entry archived',
-              )
-            }
-          >
-            {archived ? 'Restore' : 'Archive'}
-          </button>
-          <button
-            type="button"
-            className="button button--secondary button--compact"
-            onClick={() => {
-              setConfirmDelete(true);
-            }}
-          >
-            Delete
-          </button>
+      <Section title="Manage" className="learn-manage">
+        <div className="learn-manage__card">
+          <p className="learn-manage__text">
+            {archived
+              ? 'Archived entries stay searchable under Filters. Restore it to bring it back.'
+              : 'Archive to tidy it away and keep it, or delete it for good.'}
+          </p>
+          <div className="action-bar">
+            <button
+              type="button"
+              className="button button--secondary button--compact"
+              disabled={pending}
+              onClick={() =>
+                void run(
+                  () => setLearningArchived(entry.id, !archived),
+                  archived ? 'Entry restored' : 'Entry archived',
+                )
+              }
+            >
+              {archived ? (
+                <ArchiveRestore size={16} aria-hidden="true" />
+              ) : (
+                <Archive size={16} aria-hidden="true" />
+              )}
+              {archived ? 'Restore' : 'Archive'}
+            </button>
+            <button
+              type="button"
+              className="button button--secondary button--compact learn-manage__delete"
+              onClick={() => {
+                setConfirmDelete(true);
+              }}
+            >
+              <Trash2 size={16} aria-hidden="true" />
+              Delete
+            </button>
+          </div>
         </div>
       </Section>
 
@@ -206,6 +337,6 @@ function LearningDetailView({ detail }: { detail: LearningDetail }) {
           });
         }}
       />
-    </>
+    </article>
   );
 }

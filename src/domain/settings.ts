@@ -10,6 +10,8 @@ export const settingsSchema = z.object({
   /** 0 = Sunday, 1 = Monday. */
   weekStartsOn: z.union([z.literal(0), z.literal(1)]),
   lastBackupAt: timestampSchema.optional(),
+  /** How the app greets you, e.g. on Today. Absent means no name is used. */
+  displayName: z.string().trim().min(1).max(40).optional(),
   updatedAt: timestampSchema,
 });
 export type Settings = z.infer<typeof settingsSchema>;

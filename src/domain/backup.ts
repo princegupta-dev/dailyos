@@ -3,6 +3,7 @@ import { timestampSchema, toValidationIssues, type ValidationIssue } from '@/lib
 import { habitEntrySchema, habitSchema } from './habit';
 import { learningEntrySchema } from './learning';
 import { dailyPlanSchema, planItemSchema } from './plan';
+import { itemReflectionSchema } from './reflection';
 import { reviewActionSchema, reviewSchema } from './review';
 import { settingsSchema } from './settings';
 import { taskEventSchema, taskSchema } from './task';
@@ -21,6 +22,7 @@ export const BACKUP_TABLES = [
   'learningEntries',
   'reviews',
   'reviewActions',
+  'itemReflections',
 ] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
@@ -35,6 +37,7 @@ export const BACKUP_TABLE_LABELS: Record<BackupTable, string> = {
   learningEntries: 'Notes',
   reviews: 'Reviews',
   reviewActions: 'Review actions',
+  itemReflections: 'Habit and task reflections',
 };
 
 /** Tables can be missing from older backups (written before they existed); they default to empty. */
@@ -49,6 +52,7 @@ const backupDataSchema = z.object({
   learningEntries: z.array(learningEntrySchema).default([]),
   reviews: z.array(reviewSchema).default([]),
   reviewActions: z.array(reviewActionSchema).default([]),
+  itemReflections: z.array(itemReflectionSchema).default([]),
 });
 export type BackupData = z.output<typeof backupDataSchema>;
 

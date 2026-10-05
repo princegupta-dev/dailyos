@@ -1,0 +1,444 @@
+/*
+ * Habits: the list of every habit with its recent story, an overview, and habit craft.
+ * Shares Today's language (progress hero, cards, ticks) from components.css. Every value
+ * comes from tokens.css.
+ */
+
+/* ---------- Layout ---------- */
+
+.habits-page {
+  position: relative;
+  isolation: isolate;
+}
+
+/*
+ * One column on phones and tablets: overview, then the list, then craft. The column
+ * wrappers dissolve so their blocks can take that order.
+ */
+.habits-page__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.habits-page__main,
+.habits-page__side {
+  display: contents;
+}
+
+.habits-page__block {
+  min-width: 0;
+  animation: rise-in 480ms var(--ease-out) backwards;
+}
+
+.habits-page__block--overview {
+  order: 1;
+}
+
+.habits-page__block--list {
+  order: 2;
+  animation-delay: 80ms;
+}
+
+.habits-page__block--craft {
+  order: 3;
+  animation-delay: 160ms;
+}
+
+.habits-page .section {
+  padding: 0;
+}
+
+/* Wide screens: the list leads; overview and craft sit beside it and stay in view. */
+@media (min-width: 1100px) {
+  .app-main:has(> .habits-page) {
+    max-width: 72rem;
+  }
+
+  .habits-page__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-6);
+  }
+
+  .habits-page__main {
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .habits-page__side {
+    position: sticky;
+    top: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* ---------- Overview ---------- */
+
+.habits-overview__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.overview-stat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-glass);
+  transition:
+    border-color var(--duration-fast) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.overview-stat:hover {
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.overview-stat__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.overview-stat__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.overview-stat--warm .overview-stat__icon {
+  background: var(--color-warm-soft);
+  color: var(--color-warm);
+}
+
+.overview-stat__value {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-stat__detail {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-family: var(--font-serif);
+  font-size: var(--text-xs);
+  font-style: italic;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Habit cards ---------- */
+
+.habit-list--rich {
+  gap: var(--space-3);
+}
+
+.habit-list--rich .habit-row {
+  min-height: 84px;
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.habit-list--rich > li {
+  animation: rise-in 360ms var(--ease-out) backwards;
+}
+
+.habit-list--rich > li:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.habit-list--rich > li:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.habit-list--rich > li:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.habit-list--rich > li:nth-child(n + 5) {
+  animation-delay: 160ms;
+}
+
+/* Ended habits read as history: quieter, no shadow. */
+.habit-list--rich .habit-row--off {
+  border-style: dashed;
+}
+
+/* Recent activity under each habit's name. */
+.habit-insights {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.habit-insights__dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.habit-insights__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--color-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.habit-row:hover .habit-insights__dot {
+  transform: translateY(-1px);
+}
+
+.habit-insights__dot--completed {
+  background: var(--gradient-brand);
+  box-shadow: none;
+}
+
+.habit-insights__dot--missed {
+  background: var(--color-danger-soft);
+  box-shadow: inset 0 0 0 1px var(--color-danger);
+}
+
+.habit-insights__dot--skipped {
+  background: transparent;
+  box-shadow: none;
+  border: 1px dashed var(--color-subtle);
+}
+
+.habit-insights__dot--pending {
+  background: var(--color-surface);
+  box-shadow:
+    inset 0 0 0 1px var(--color-primary),
+    0 0 0 2px var(--color-primary-ring);
+}
+
+.habit-insights__rate strong {
+  color: var(--color-text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-insights__best {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-warm);
+  font-weight: 600;
+}
+
+/* ---------- Add and ended ---------- */
+
+.habits-page__footer {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* A dashed "slot" inviting the next habit. */
+.habit-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.habit-add:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-faint);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.habit-add:active {
+  transform: scale(0.99);
+}
+
+.habit-add__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  transition:
+    background var(--duration) ease,
+    color var(--duration) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.habit-add:hover .habit-add__icon {
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+  transform: rotate(90deg);
+}
+
+.habit-add__title {
+  display: block;
+  font-weight: 600;
+}
+
+.habit-add__hint {
+  display: block;
+  color: var(--color-text-muted);
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+.ended-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-self: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-glass);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.ended-toggle:hover,
+.ended-toggle[aria-pressed='true'] {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+/* ---------- Habit craft ---------- */
+
+.habit-craft {
+  position: relative;
+  padding: var(--space-5);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) + 4px);
+  background:
+    linear-gradient(160deg, var(--color-warm-soft), transparent 55%), var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.habit-craft__title {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.habit-craft__title em {
+  color: var(--color-warm);
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+.habit-craft__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.habit-craft__item {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.habit-craft__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-warm);
+  box-shadow:
+    inset 0 0 0 1px var(--color-border),
+    var(--shadow-sm);
+}
+
+.habit-craft__name {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+
+.habit-craft__text {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+/* ---------- First visit ---------- */
+
+.habits-empty {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 40rem;
+  animation: rise-in 480ms var(--ease-out);
+}
+
+.habits-empty__hero {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) + 4px);
+  background: var(--gradient-glow), var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.habits-empty__hero .empty-state {
+  padding: 0;
+  border: none;
+  background: transparent;
+}

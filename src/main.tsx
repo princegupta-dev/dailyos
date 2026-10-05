@@ -4,6 +4,14 @@ import { App } from './app/App';
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/components.css';
+import './styles/today.css';
+import './styles/habits.css';
+import './styles/wizard.css';
+import './styles/habit-detail.css';
+import './styles/reviews.css';
+import './styles/settings.css';
+import './styles/learning.css';
+import './styles/insights.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

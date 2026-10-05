@@ -8,6 +8,7 @@ import {
   type ReviewActionStatus,
   type ReviewDraft,
 } from '@/domain/review';
+import type { ItemReflection } from '@/domain/reflection';
 import type { Task } from '@/domain/task';
 import { newId } from '@/lib/ids';
 import { db } from '../database';
@@ -167,23 +168,73 @@ export async function listOpenActions(beforeStart?: string): Promise<OpenAction[
     );
 }
 
-export async function listReviews(limit: number): Promise<Review[]> {
-  const reviews = await db.reviews.toArray();
+export interface PastReview {
+  period: Period;
+  /** The period's rating: for a day, the average of its habit and task ratings. */
+  rating?: number | undefined;
+  /** How many habits and tasks were reflected on (daily reviews only). */
+  reflections: number;
+}
+
+/**
+ * Most recent reviews, newest first. A day counts as reviewed when it has a saved review or
+ * at least one habit or task reflection.
+ */
+export async function listReviews(limit: number): Promise<PastReview[]> {
+  const [reviews, reflections] = await Promise.all([
+    db.reviews.toArray(),
+    db.itemReflections.toArray(),
+  ]);
+  const reflectionsByDate = new Map<string, ItemReflection[]>();
+  for (const r of reflections) {
+    reflectionsByDate.set(r.date, [...(reflectionsByDate.get(r.date) ?? []), r]);
+  }
+
+  const items = new Map<string, PastReview>();
+  for (const r of reviews) {
+    items.set(`${r.periodType}:${r.periodStart}`, {
+      period: { type: r.periodType, start: r.periodStart, end: r.periodEnd },
+      rating: r.rating,
+      reflections: 0,
+    });
+  }
+  for (const [date, list] of reflectionsByDate) {
+    const key = `daily:${date}`;
+    const rated = list.flatMap((r) => (r.rating === undefined ? [] : [r.rating]));
+    items.set(key, {
+      period: items.get(key)?.period ?? { type: 'daily', start: date, end: date },
+      rating:
+        rated.length > 0
+          ? rated.reduce((sum, r) => sum + r, 0) / rated.length
+          : items.get(key)?.rating,
+      reflections: list.length,
+    });
+  }
+
   const typeOrder = { daily: 0, weekly: 1, monthly: 2 } as const;
-  return reviews
+  return [...items.values()]
     .sort(
       (a, b) =>
-        b.periodStart.localeCompare(a.periodStart) ||
-        typeOrder[a.periodType] - typeOrder[b.periodType],
+        b.period.start.localeCompare(a.period.start) ||
+        typeOrder[a.period.type] - typeOrder[b.period.type],
     )
     .slice(0, limit);
 }
 
-/** Which of the given periods already have a review, keyed `type:start`. */
+/**
+ * Which of the given periods are already reviewed, keyed `type:start`. A day also counts when
+ * any of its habits or tasks has a reflection.
+ */
 export async function reviewedPeriods(periods: readonly Period[]): Promise<Set<string>> {
   const found = await db.reviews
     .where('[periodType+periodStart]')
     .anyOf(periods.map((p) => [p.type, p.start]))
     .toArray();
-  return new Set(found.map((r) => `${r.periodType}:${r.periodStart}`));
+  const days = periods.filter((p) => p.type === 'daily').map((p) => p.start);
+  const reflected =
+    days.length === 0 ? [] : await db.itemReflections.where('date').anyOf(days).toArray();
+  return new Set([
+    ...found.map((r) => `${r.periodType}:${r.periodStart}`),
+    ...reflected.map((r) => `daily:${r.date}`),
+  ]);
 }

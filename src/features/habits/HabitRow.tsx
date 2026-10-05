@@ -1,4 +1,5 @@
-import { Check, Ellipsis } from 'lucide-react';
+import { Check, Ellipsis, Flame } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { setHabitStatus } from '@/db/repositories/habits';
@@ -23,13 +24,23 @@ interface HabitRowProps {
   currentStreak: number;
   /** When given, a "more" button opens the log sheet (skip, missed, details). */
   onOpenLog?: (() => void) | undefined;
+  /** Optional extra line inside the card, e.g. recent activity on the Habits page. */
+  insights?: ReactNode;
 }
 
 /**
  * A habit card. Tapping the card opens the habit; the checkbox completes it with one tap, and
  * tapping again undoes an accidental check-off. A completed habit is crossed out.
  */
-export function HabitRow({ habit, date, status, entry, currentStreak, onOpenLog }: HabitRowProps) {
+export function HabitRow({
+  habit,
+  date,
+  status,
+  entry,
+  currentStreak,
+  onOpenLog,
+  insights,
+}: HabitRowProps) {
   const { run, pending } = useAction();
   const checkable = status !== null;
   const doneToday = entry?.status === 'completed';
@@ -51,8 +62,7 @@ export function HabitRow({ habit, date, status, entry, currentStreak, onOpenLog 
     if (entry?.status === 'missed') meta.push('Missed');
     if (doneEarlierThisWeek) meta.push('Done this week');
   }
-  if (currentStreak > 1)
-    meta.push(`${currentStreak} ${habit.frequency === 'weekly' ? 'weeks' : 'in a row'}`);
+  const streakUnit = habit.frequency === 'weekly' ? 'weeks' : 'in a row';
 
   const toggle = () => {
     void run(() =>
@@ -65,11 +75,19 @@ export function HabitRow({ habit, date, status, entry, currentStreak, onOpenLog 
   const state = !checkable ? 'off' : done ? 'done' : (entry?.status ?? 'pending');
   return (
     <li className={`habit-row habit-row--${state}`}>
-      <CategoryIcon category={habit.category} />
+      <CategoryIcon category={habit.category} icon={habit.icon} tone={habit.tone} />
       <Link to={`/habits/${habit.id}`} className="habit-row__body">
         <span className="habit-row__name">{habit.name}</span>
         {meta.length > 0 && <span className="habit-row__meta">{meta.join(' · ')}</span>}
+        {insights}
       </Link>
+      {currentStreak > 1 && (
+        <span className="streak-badge habit-row__streak" title={`${currentStreak} ${streakUnit}`}>
+          <Flame size={13} aria-hidden="true" />
+          {currentStreak}
+          <span className="visually-hidden"> {streakUnit}</span>
+        </span>
+      )}
       {onOpenLog && checkable && (
         <button
           type="button"

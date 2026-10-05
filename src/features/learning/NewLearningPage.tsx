@@ -1,5 +1,6 @@
+import { ArrowLeft } from 'lucide-react';
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { PageHeader } from '@/components/PageHeader';
 import { createLearningEntry, searchLearning } from '@/db/repositories/learning';
 import { useAction } from '@/hooks/useAction';
@@ -14,8 +15,16 @@ export function NewLearningPage() {
   const topics = useLiveData(useCallback(() => searchLearning({}), []));
 
   return (
-    <>
-      <PageHeader title="New entry" />
+    <div className="learn-form-page">
+      <PageHeader
+        title="New entry"
+        description="Something you learned, in your own words."
+        leading={
+          <Link to="/learn" className="icon-button" aria-label="Back to Learn">
+            <ArrowLeft size={20} aria-hidden="true" />
+          </Link>
+        }
+      />
       <LearningForm
         today={today}
         topics={topics.status === 'ready' ? topics.data.topics : []}
@@ -29,6 +38,6 @@ export function NewLearningPage() {
           void navigate(`/learn/${entry.id}`, { replace: true });
         }}
       />
-    </>
+    </div>
   );
 }

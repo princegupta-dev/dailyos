@@ -1,4 +1,4 @@
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Lightbulb } from 'lucide-react';
 import { useCallback } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -19,6 +19,7 @@ export function RecentLearning({ today }: { today: string }) {
   return (
     <Section
       title="Recent learning"
+      icon={Lightbulb}
       meta={
         dueCount > 0 ? (
           <Link to="/learn">

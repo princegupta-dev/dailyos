@@ -1,4 +1,4 @@
-import { CalendarPlus, X } from 'lucide-react';
+import { BellRing, CalendarPlus, Layers, Link2, PenLine, X } from 'lucide-react';
 import { useContext, useId, useState, type SyntheticEvent } from 'react';
 import { TextAreaField, TextField } from '@/components/form';
 import { ToastContext } from '@/components/toast-context';
@@ -16,6 +16,7 @@ import type { Task } from '@/domain/task';
 import { useLiveData } from '@/hooks/useLiveData';
 import { relativeDayLabel } from '@/lib/format';
 import { issuesByField } from '@/lib/validation';
+import { topicTone } from './learningInsights';
 
 interface LearningFormProps {
   initial?: LearningEntry;
@@ -89,47 +90,78 @@ export function LearningForm({
       : [];
 
   return (
-    <form className="form" onSubmit={(e) => void submit(e)} noValidate>
-      <TextAreaField
-        label="What did you learn?"
-        rows={5}
-        value={content}
-        error={errors.content}
-        onChange={(e) => {
-          setContent(e.target.value);
-        }}
-      />
-      <TextField
-        label="Title"
-        hint="Optional. The first line is used if you leave it blank."
-        value={title}
-        maxLength={200}
-        autoComplete="off"
-        error={errors.title}
-        onChange={(e) => {
-          setTitle(e.target.value);
-        }}
-      />
-      <TextField
-        label="Topic"
-        hint="Optional, e.g. TypeScript or Leadership"
-        value={topic}
-        maxLength={60}
-        list={topicListId}
-        autoComplete="off"
-        error={errors.topic}
-        onChange={(e) => {
-          setTopic(e.target.value);
-        }}
-      />
-      <datalist id={topicListId}>
-        {topics.map((t) => (
-          <option key={t} value={t} />
-        ))}
-      </datalist>
+    <form className="form learn-form" onSubmit={(e) => void submit(e)} noValidate>
+      <div className="learn-form__card learn-form__card--compose">
+        <p className="learn-form__step" aria-hidden="true">
+          <PenLine size={14} /> In your own words
+        </p>
+        <div className="learn-compose">
+          <TextAreaField
+            label="What did you learn?"
+            rows={5}
+            value={content}
+            placeholder="One clear sentence is enough. The first line becomes the title."
+            error={errors.content}
+            onChange={(e) => {
+              setContent(e.target.value);
+            }}
+          />
+        </div>
+        <TextField
+          label="Title"
+          hint="Optional. The first line is used if you leave it blank."
+          value={title}
+          maxLength={200}
+          autoComplete="off"
+          error={errors.title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+          }}
+        />
+        <TextField
+          label="Topic"
+          hint="Optional, e.g. TypeScript or Leadership"
+          value={topic}
+          maxLength={60}
+          list={topicListId}
+          autoComplete="off"
+          error={errors.topic}
+          onChange={(e) => {
+            setTopic(e.target.value);
+          }}
+        />
+        <datalist id={topicListId}>
+          {topics.map((t) => (
+            <option key={t} value={t} />
+          ))}
+        </datalist>
+        {topics.length > 0 && (
+          <div className="learn-form__topics" role="group" aria-label="Your topics">
+            {topics.slice(0, 8).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`topic-chip topic-chip--${topicTone(t)}`}
+                aria-pressed={topic === t}
+                onClick={() => {
+                  setTopic(topic === t ? '' : t);
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
-      <details className="disclosure" open={hasStructured}>
-        <summary className="disclosure__summary">Add detail</summary>
+      <details className="disclosure learn-form__more" open={hasStructured}>
+        <summary className="disclosure__summary">
+          <Layers size={16} aria-hidden="true" />
+          Add detail
+        </summary>
+        <p className="learn-form__more-hint">
+          Explanation, an example, open questions, how you’ll apply it, and where it came from.
+        </p>
         <div className="form disclosure__body">
           {STRUCTURED_FIELDS.map((field) =>
             field === 'source' ? (
@@ -158,8 +190,10 @@ export function LearningForm({
         </div>
       </details>
 
-      <fieldset className="fieldset">
-        <legend className="field__label">Related tasks</legend>
+      <fieldset className="fieldset learn-form__card">
+        <legend className="learn-form__legend">
+          <Link2 size={15} aria-hidden="true" /> Related tasks
+        </legend>
         {related.length > 0 && (
           <ul className="chip-list">
             {related.map((task) => (
@@ -201,8 +235,13 @@ export function LearningForm({
         {errors.relatedTaskIds && <p className="field__error">{errors.relatedTaskIds}</p>}
       </fieldset>
 
-      <fieldset className="fieldset">
-        <legend className="field__label">Review dates</legend>
+      <fieldset className="fieldset learn-form__card">
+        <legend className="learn-form__legend">
+          <BellRing size={15} aria-hidden="true" /> Review dates
+        </legend>
+        <p className="field__hint">
+          Looking back after a day, a week, and a month helps it stick. Due reviews show on Learn.
+        </p>
         {reviewDates.length > 0 && (
           <ul className="chip-list">
             {reviewDates.map((date) => (
@@ -248,7 +287,7 @@ export function LearningForm({
         </div>
         <button
           type="button"
-          className="link-button"
+          className="learn-form__suggest"
           onClick={() => {
             addReviewDates(suggestReviewDates(initial?.capturedDate ?? today));
           }}
@@ -258,11 +297,15 @@ export function LearningForm({
         {errors.reviewDates && <p className="field__error">{errors.reviewDates}</p>}
       </fieldset>
 
-      <div className="form__actions">
+      <div className="form__actions learn-form__actions">
         <button type="button" className="button button--secondary" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="button button--primary" disabled={pending}>
+        <button
+          type="submit"
+          className="button button--primary learn-form__save"
+          disabled={pending}
+        >
           {submitLabel}
         </button>
       </div>

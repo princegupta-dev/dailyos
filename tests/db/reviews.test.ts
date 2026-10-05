@@ -118,6 +118,6 @@ describe('review actions', () => {
   it('lists past reviews newest first', async () => {
     await saveReview(day('2026-09-30'), {});
     await saveReview(day('2026-10-02'), {});
-    expect((await listReviews(5)).map((r) => r.periodStart)).toEqual(['2026-10-02', '2026-09-30']);
+    expect((await listReviews(5)).map((r) => r.period.start)).toEqual(['2026-10-02', '2026-09-30']);
   });
 });

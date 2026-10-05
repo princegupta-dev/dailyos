@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react';
 import { ToastContext } from '@/components/toast-context';
 import { toAppError } from '@/db/errors';
+import type { HabitIconKey, HabitTone, TimeOfDay } from '@/domain/appearance';
 import type { HabitCategory } from '@/domain/categories';
 import { isWeekdaysSchedule, WEEKDAYS_MON_FRI, type Habit, type HabitDraft } from '@/domain/habit';
 import { issuesByField } from '@/lib/validation';
@@ -19,6 +20,14 @@ export interface HabitFormState {
   minimumTarget: string;
   allowAlternatives: boolean;
   alternatives: string[];
+  /** Own icon and tone; undefined uses the category's. */
+  icon: HabitIconKey | undefined;
+  tone: HabitTone | undefined;
+  /** Undefined means anytime. */
+  timeOfDay: TimeOfDay | undefined;
+  cue: string;
+  /** Creation only: first day it counts, as a date key. Empty means today. */
+  startDate: string;
 }
 
 export function initialHabitForm(habit?: Habit): HabitFormState {
@@ -35,6 +44,11 @@ export function initialHabitForm(habit?: Habit): HabitFormState {
     minimumTarget: habit?.minimumTarget ?? '',
     allowAlternatives: (habit?.alternatives?.length ?? 0) > 0,
     alternatives: habit?.alternatives ?? [],
+    icon: habit?.icon,
+    tone: habit?.tone,
+    timeOfDay: habit?.timeOfDay,
+    cue: habit?.cue ?? '',
+    startDate: '',
   };
 }
 
@@ -50,14 +64,19 @@ export function toHabitDraft(state: HabitFormState): HabitDraft {
     unit: state.unit,
     minimumTarget: state.minimumTarget,
     alternatives: state.allowAlternatives ? state.alternatives : [],
+    icon: state.icon,
+    tone: state.tone,
+    timeOfDay: state.timeOfDay,
+    cue: state.cue,
+    startDate: state.startDate === '' ? undefined : state.startDate,
   };
 }
 
 /** Field paths that belong to each creation step, to jump back to a step with errors. */
 export const STEP_FIELDS: readonly (readonly string[])[] = [
-  ['name', 'description', 'category'],
+  ['name', 'description', 'category', 'icon', 'tone'],
   ['minimumTarget', 'alternatives'],
-  ['frequency', 'weekdays', 'target', 'unit'],
+  ['frequency', 'weekdays', 'target', 'unit', 'startDate', 'timeOfDay', 'cue'],
 ];
 
 /** Shared submit handling: maps validation issues to fields, other errors to a toast. */

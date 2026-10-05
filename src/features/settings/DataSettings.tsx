@@ -1,4 +1,12 @@
-import { Download, HardDrive, Upload } from 'lucide-react';
+import {
+  CircleAlert,
+  CloudDownload,
+  Download,
+  FileCheck2,
+  ShieldCheck,
+  Upload,
+  type LucideIcon,
+} from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { ConfirmDialog } from '@/components/Dialog';
 import { Section } from '@/components/Section';
@@ -20,8 +28,10 @@ import {
 } from '@/domain/backup';
 import { useAction } from '@/hooks/useAction';
 import { useSettings, useTimeZone, useToday } from '@/hooks/useToday';
+import { daysBetween, toLocalDateKey } from '@/lib/dates';
 import { downloadTextFile, readFileText } from '@/lib/files';
 import { formatFullTimestamp } from '@/lib/format';
+import { SettingsCard, SettingsRow } from './SettingsRow';
 
 interface Selected {
   fileName: string;
@@ -49,8 +59,11 @@ function mergeSummary(merge: MergePlan): string {
   return `Adds ${records(added)} from the backup and keeps everything on this device as it is.${already}`;
 }
 
+/** A backup older than this many days is gently flagged. */
+const STALE_AFTER_DAYS = 7;
+
 /** Download a full backup, and restore one after checking it and showing what will change. */
-export function DataSettings() {
+export function DataSettings({ icon }: { icon?: LucideIcon | undefined }) {
   const settings = useSettings();
   const timeZone = useTimeZone();
   const today = useToday();
@@ -89,6 +102,11 @@ export function DataSettings() {
     });
   };
 
+  const backupAge = settings?.lastBackupAt
+    ? daysBetween(toLocalDateKey(new Date(settings.lastBackupAt), timeZone), today)
+    : null;
+  const fresh = backupAge !== null && backupAge <= STALE_AFTER_DAYS;
+
   const preview =
     selected?.check.ok && selected.merge
       ? { fileName: selected.fileName, ...selected.check, merge: selected.merge }
@@ -111,40 +129,57 @@ export function DataSettings() {
   };
 
   return (
-    <Section title="Your data">
-      <div className="data-intro">
-        <HardDrive size={20} aria-hidden="true" />
-        <p className="muted small">
-          Everything is stored only in this browser on this device. Clearing site data or losing the
-          device deletes it, so download a backup now and then.
-        </p>
-      </div>
-      <p className="small">
-        {settings?.lastBackupAt
-          ? `Last backup: ${formatFullTimestamp(settings.lastBackupAt, timeZone)}`
-          : 'No backup downloaded yet.'}
-      </p>
-      <div className="data-actions">
-        <button
-          type="button"
-          className="button button--primary"
-          disabled={pending}
-          onClick={download}
-        >
-          <Download size={18} aria-hidden="true" /> Download backup
-        </button>
-        <label className="button button--secondary file-button">
-          <Upload size={18} aria-hidden="true" /> Restore from file
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/json,.json"
-            className="visually-hidden"
-            disabled={pending}
-            onChange={choose}
-          />
-        </label>
-      </div>
+    <Section
+      title="Data and privacy"
+      icon={icon}
+      description="Yours alone, kept on this device."
+      className="settings-group"
+    >
+      <SettingsCard>
+        <SettingsRow
+          icon={ShieldCheck}
+          title="Private by design"
+          description="Everything is stored only in this browser on this device: no account, no tracking, nothing sent anywhere. Clearing site data or losing the device deletes it, so download a backup now and then."
+        />
+        <SettingsRow icon={fresh ? FileCheck2 : CircleAlert} tone={fresh ? 'sage' : 'amber'}>
+          <p className="settings-row__title">Backup</p>
+          <p className="settings-row__description">
+            {settings?.lastBackupAt
+              ? `Last backup: ${formatFullTimestamp(settings.lastBackupAt, timeZone)}`
+              : 'No backup downloaded yet.'}
+          </p>
+          <span className={`backup-health${fresh ? ' backup-health--fresh' : ''}`}>
+            {backupAge === null
+              ? 'Worth doing soon'
+              : fresh
+                ? 'Up to date'
+                : `${backupAge} days ago · time for a fresh one`}
+          </span>
+        </SettingsRow>
+        <SettingsRow icon={CloudDownload} tone="ocean">
+          <div className="data-actions">
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={pending}
+              onClick={download}
+            >
+              <Download size={18} aria-hidden="true" /> Download backup
+            </button>
+            <label className="button button--secondary file-button">
+              <Upload size={18} aria-hidden="true" /> Restore from file
+              <input
+                ref={fileInput}
+                type="file"
+                accept="application/json,.json"
+                className="visually-hidden"
+                disabled={pending}
+                onChange={choose}
+              />
+            </label>
+          </div>
+        </SettingsRow>
+      </SettingsCard>
 
       {selected && !selected.check.ok && (
         <div className="backup-panel backup-panel--error" role="alert">

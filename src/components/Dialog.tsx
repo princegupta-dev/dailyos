@@ -1,9 +1,13 @@
-import { X } from 'lucide-react';
+import { X, type LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 interface DialogProps {
   open: boolean;
   title: string;
+  /** Optional one-line subtitle under the title. */
+  description?: string | undefined;
+  /** Optional icon shown in a soft tile beside the title. */
+  icon?: LucideIcon | undefined;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
@@ -13,9 +17,18 @@ interface DialogProps {
  * Modal built on the native <dialog> element, which provides focus trapping, Escape to
  * close, and inert background content in supporting browsers (including iOS Safari 15.4+).
  */
-export function Dialog({ open, title, onClose, children, footer }: DialogProps) {
+export function Dialog({
+  open,
+  title,
+  description,
+  icon: Icon,
+  onClose,
+  children,
+  footer,
+}: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -29,6 +42,7 @@ export function Dialog({ open, title, onClose, children, footer }: DialogProps) 
       ref={ref}
       className="dialog"
       aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
       onClose={onClose}
       onCancel={(event) => {
         event.preventDefault();
@@ -38,9 +52,23 @@ export function Dialog({ open, title, onClose, children, footer }: DialogProps) 
       {open && (
         <div className="dialog__panel">
           <header className="dialog__header">
-            <h2 id={titleId} className="dialog__title">
-              {title}
-            </h2>
+            <div className="dialog__heading">
+              {Icon && (
+                <span className="dialog__icon" aria-hidden="true">
+                  <Icon size={18} />
+                </span>
+              )}
+              <div>
+                <h2 id={titleId} className="dialog__title">
+                  {title}
+                </h2>
+                {description && (
+                  <p id={descriptionId} className="dialog__description">
+                    {description}
+                  </p>
+                )}
+              </div>
+            </div>
             <button
               type="button"
               className="icon-button icon-button--plain"

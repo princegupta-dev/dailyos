@@ -19,10 +19,11 @@ afterEach(() => {
 });
 
 describe('daily review', () => {
-  it('shows plan versus actual, saves the reflection, and carries actions to Today', async () => {
+  it('shows plan versus actual, reflects on each habit and task, and carries actions to Today', async () => {
     const planned = await createTask({ title: 'Write release notes' }, { planFor: '2026-10-02' });
-    await createTask({ title: 'Update docs' }, { planFor: '2026-10-02' });
+    const other = await createTask({ title: 'Update docs' }, { planFor: '2026-10-02' });
     await completeTask(planned.id);
+    const habit = await createHabit({ name: 'Run', frequency: 'daily' });
     const user = userEvent.setup();
     renderApp('/');
 
@@ -34,27 +35,76 @@ describe('daily review', () => {
     expect(within(summary).getByText('1 of 2 planned tasks done')).toBeInTheDocument();
     expect(within(summary).getByText('50%')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('radio', { name: '4' }));
-    await user.type(screen.getByLabelText('What went well today?'), 'Release notes shipped');
-    await user.type(screen.getByLabelText('Focus for tomorrow'), 'Docs first thing');
-    await user.click(screen.getByRole('button', { name: 'Add action' }));
-    await user.type(screen.getByLabelText('Action 1'), 'Ask Sam for review');
-    await user.click(screen.getByRole('button', { name: 'Save review' }));
+    // There is no shared reflection: each habit and task has its own card, and the first one
+    // without a reflection starts open.
+    const reflections = await screen.findByRole('region', { name: 'Reflections' });
+    expect(within(reflections).getByText('0 of 3 reflected')).toBeInTheDocument();
+    const run = within(reflections).getByRole('group', { name: 'Reflection on Run' });
+    expect(
+      within(reflections).queryByRole('group', { name: 'Reflection on Write release notes' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(within(run).getByRole('radio', { name: '4' }));
+    await user.type(within(run).getByLabelText('What went well today?'), 'Easy pace');
+    await user.click(within(run).getByRole('button', { name: 'Save reflection' }));
+    expect(await screen.findByText('Saved reflection on Run')).toBeInTheDocument();
+
+    // Saving moves on to the next habit or task.
+    const notes = await within(reflections).findByRole('group', {
+      name: 'Reflection on Write release notes',
+    });
+    expect(within(notes).getByLabelText('What went well today?')).toHaveValue('');
+    await user.click(within(notes).getByRole('radio', { name: '2' }));
+    await user.type(within(notes).getByLabelText('What got in the way?'), 'Interruptions');
+    await user.click(within(notes).getByRole('button', { name: 'Save reflection' }));
+    expect(await within(reflections).findByText('2 of 3 reflected')).toBeInTheDocument();
+    expect(
+      await within(reflections).findByRole('group', { name: 'Reflection on Update docs' }),
+    ).toBeInTheDocument();
+
+    const stored = await db.itemReflections.toArray();
+    expect(stored).toHaveLength(2);
+    expect(stored.find((r) => r.subjectId === habit.id)).toMatchObject({
+      subjectType: 'habit',
+      date: '2026-10-02',
+      rating: 4,
+      wentWell: 'Easy pace',
+    });
+    expect(stored.find((r) => r.subjectId === planned.id)).toMatchObject({
+      subjectType: 'task',
+      rating: 2,
+      gotInTheWay: 'Interruptions',
+    });
+    expect(stored.some((r) => r.subjectId === other.id)).toBe(false);
+
+    // Reopening a card shows that item's own answers.
+    await user.click(within(reflections).getByRole('button', { name: /^Run/ }));
+    expect(
+      within(within(reflections).getByRole('group', { name: 'Reflection on Run' })).getByLabelText(
+        'What went well today?',
+      ),
+    ).toHaveValue('Easy pace');
+
+    const plan = screen.getByRole('region', { name: 'Plan for tomorrow' });
+    await user.type(within(plan).getByLabelText('Focus for tomorrow'), 'Docs first thing');
+    await user.click(within(plan).getByRole('button', { name: 'Add action' }));
+    await user.type(within(plan).getByLabelText('Action 1'), 'Ask Sam for review');
+    await user.click(within(plan).getByRole('button', { name: 'Save plan' }));
     expect(await screen.findByText('Review saved')).toBeInTheDocument();
 
     // Saving again must update, not duplicate, the action.
-    await user.click(await screen.findByRole('button', { name: 'Save changes' }));
+    await user.click(await within(plan).findByRole('button', { name: 'Save changes' }));
     await waitFor(async () => {
       expect(await db.reviewActions.count()).toBe(1);
     });
-    expect(await db.reviews.toArray()).toMatchObject([
-      { rating: 4, wins: 'Release notes shipped' },
-    ]);
+    expect(await db.reviews.toArray()).toMatchObject([{ focus: 'Docs first thing' }]);
 
     await user.click(screen.getByRole('link', { name: 'Today' }));
     const evening = await screen.findByRole('region', { name: 'Evening review' });
     expect(await within(evening).findByText('Ask Sam for review')).toBeInTheDocument();
-    expect(within(evening).getByRole('link', { name: 'Open today’s review' })).toBeInTheDocument();
+    expect(
+      await within(evening).findByRole('link', { name: 'Open today’s review' }),
+    ).toBeInTheDocument();
 
     await user.click(
       within(evening).getByRole('checkbox', { name: 'Mark “Ask Sam for review” done' }),
@@ -82,7 +132,8 @@ describe('daily review', () => {
   it('does not allow reviewing a future day', async () => {
     renderApp('/review/daily/2026-10-03');
     expect(await screen.findByText('This period hasn’t started yet.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Save review' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save plan' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Reflections' })).not.toBeInTheDocument();
   });
 });
 

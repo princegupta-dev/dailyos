@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type { Habit, HabitEntry } from '@/domain/habit';
 import type { LearningEntry } from '@/domain/learning';
 import type { DailyPlan, PlanItem } from '@/domain/plan';
+import type { ItemReflection } from '@/domain/reflection';
 import type { Review, ReviewAction } from '@/domain/review';
 import type { Settings } from '@/domain/settings';
 import type { Task, TaskEvent } from '@/domain/task';
@@ -21,6 +22,7 @@ export class DailyOSDatabase extends Dexie {
   learningEntries!: Table<LearningEntry, string>;
   reviews!: Table<Review, string>;
   reviewActions!: Table<ReviewAction, string>;
+  itemReflections!: Table<ItemReflection, string>;
 
   constructor(name = DATABASE_NAME, versions: readonly SchemaVersion[] = SCHEMA_VERSIONS) {
     super(name);

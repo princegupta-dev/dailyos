@@ -1,4 +1,4 @@
-import { ListPlus } from 'lucide-react';
+import { CalendarClock, ListPlus } from 'lucide-react';
 import { Link } from 'react-router';
 import { convertActionToTask, setActionStatus, type OpenAction } from '@/db/repositories/reviews';
 import { periodLabel } from '@/domain/review';
@@ -9,9 +9,12 @@ import { inlineDayLabel } from '@/lib/format';
 export function OpenActionsList({ items, today }: { items: readonly OpenAction[]; today: string }) {
   const { run, pending } = useAction();
   return (
-    <ul className="picker-list">
+    <ul className="picker-list open-actions">
       {items.map(({ action, review }) => (
-        <li key={action.id} className="picker-list__item">
+        <li
+          key={action.id}
+          className={`picker-list__item open-actions__item${action.targetDate && action.targetDate < today ? ' open-actions__item--overdue' : ''}`}
+        >
           <div className="checkbox-field action-item">
             <input
               type="checkbox"
@@ -30,12 +33,17 @@ export function OpenActionsList({ items, today }: { items: readonly OpenAction[]
                   start: review.periodStart,
                   end: review.periodEnd,
                 })}
-                {action.targetDate ? ` · by ${inlineDayLabel(action.targetDate, today)}` : ''}
+                {action.targetDate && (
+                  <span className="open-actions__due">
+                    <CalendarClock size={12} aria-hidden="true" /> by{' '}
+                    {inlineDayLabel(action.targetDate, today)}
+                  </span>
+                )}
               </span>
             </span>
           </div>
           {action.taskId ? (
-            <Link to={`/tasks/${action.taskId}`} className="link-button">
+            <Link to={`/tasks/${action.taskId}`} className="link-button open-actions__task">
               View task
             </Link>
           ) : (

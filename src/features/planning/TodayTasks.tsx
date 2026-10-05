@@ -1,12 +1,13 @@
-import { CalendarClock, Plus } from 'lucide-react';
+import { CalendarClock, ClipboardList, Hourglass, ListChecks, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
-import { LiveView } from '@/components/LiveView';
+import { EmptyState } from '@/components/EmptyState';
+import { LiveView, SkeletonCards } from '@/components/LiveView';
 import { Section } from '@/components/Section';
 import { getDayPlan, listUnfinishedFromEarlier, rescheduleTask } from '@/db/repositories/plans';
 import { useAction } from '@/hooks/useAction';
 import { useLiveData } from '@/hooks/useLiveData';
-import { inlineDayLabel } from '@/lib/format';
+import { formatMinutes, inlineDayLabel } from '@/lib/format';
 import { TaskRow } from '../tasks/TaskRow';
 import { useToggleTask } from '../tasks/useToggleTask';
 import { PlanTasksDialog } from './PlanTasksDialog';
@@ -21,30 +22,57 @@ export function TodayTasks({ today }: { today: string }) {
       ? dayPlan.data.entries.filter((e) => e.outcome !== 'rescheduled' && e.outcome !== 'cancelled')
       : [];
   const doneCount = counted.filter((e) => e.outcome === 'done').length;
+  // Planned time still ahead, from the estimates on tasks that are still open.
+  const minutesLeft = counted
+    .filter((e) => e.outcome !== 'done' && e.outcome !== 'not_done')
+    .reduce((sum, e) => sum + (e.task.estimatedMinutes ?? 0), 0);
+  const allTasksDone = counted.length > 0 && doneCount === counted.length;
 
   return (
     <Section
       title="Tasks"
+      icon={ListChecks}
+      description="What you planned for today"
       meta={counted.length > 0 ? `${doneCount} of ${counted.length} done` : undefined}
     >
-      <LiveView state={dayPlan}>
+      <LiveView
+        state={dayPlan}
+        loadingLabel="Loading tasks…"
+        skeleton={<SkeletonCards count={2} height={60} />}
+      >
         {({ entries }) => {
           const current = entries.filter((e) => e.outcome !== 'rescheduled');
           const moved = entries.filter((e) => e.outcome === 'rescheduled');
           return (
             <>
               {counted.length > 0 && (
-                <progress
-                  className="progress"
-                  max={counted.length}
-                  value={doneCount}
-                  aria-label={`${doneCount} of ${counted.length} planned tasks done`}
-                />
+                <div className="task-progress">
+                  <progress
+                    className="progress"
+                    max={counted.length}
+                    value={doneCount}
+                    aria-label={`${doneCount} of ${counted.length} planned tasks done`}
+                  />
+                  {allTasksDone ? (
+                    <p className="task-progress__note task-progress__note--done">
+                      Every planned task is done. <em>Nicely cleared.</em>
+                    </p>
+                  ) : (
+                    minutesLeft > 0 && (
+                      <p className="task-progress__note">
+                        <Hourglass size={13} aria-hidden="true" />
+                        About {formatMinutes(minutesLeft)} of planned work left
+                      </p>
+                    )
+                  )}
+                </div>
               )}
               {current.length === 0 ? (
-                <p className="muted small">
-                  Nothing planned yet. Pick one or two tasks that matter today.
-                </p>
+                <EmptyState
+                  icon={ClipboardList}
+                  title="Nothing planned yet"
+                  description="Pick one or two tasks that matter today."
+                />
               ) : (
                 <ul className="task-list" aria-label="Today’s tasks">
                   {current.map(({ item, task }) => (

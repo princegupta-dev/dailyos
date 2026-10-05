@@ -1,131 +1,226 @@
-import { ChevronRight, Flame, Lightbulb, ListTodo } from 'lucide-react';
-import { useCallback } from 'react';
-import { Link } from 'react-router';
-import { CategoryIcon } from '@/components/CategoryIcon';
+import { ChevronRight, Lightbulb, ListTodo, Plus, Sprout } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router';
 import { LiveView } from '@/components/LiveView';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHero } from '@/components/PageHero';
 import { Section } from '@/components/Section';
-import { listHabitSummaries } from '@/db/repositories/habits';
+import { SegmentedControl } from '@/components/SegmentedControl';
+import { getRecentOccurrences, listHabitSummaries } from '@/db/repositories/habits';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useToday, useWeekStartsOn } from '@/hooks/useToday';
-import { startOfWeek } from '@/lib/dates';
+import { addDays, startOfWeek } from '@/lib/dates';
 import { getRangeReport } from '@/services/analytics.service';
 import { RecentLearning } from '../learning/RecentLearning';
-import { percent } from '../reviews/format';
+import { TasksCard, TrendCard, WeekdayCard } from './InsightCharts';
+import {
+  AchievementsCard,
+  ConsistencyCard,
+  KpiGrid,
+  ScoreHero,
+  StreaksCard,
+  SuggestionsCard,
+} from './InsightCards';
+import {
+  achievements,
+  headline,
+  insightPeriod,
+  momentumScore,
+  suggestions,
+  weekdayExtremes,
+  weekdayPattern,
+  type PeriodKind,
+} from './insightsModel';
 
-/** Patterns from what you recorded, plus the way into notes and tasks. */
+const PERIODS: readonly { value: PeriodKind; label: string }[] = [
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'quarter', label: '90 days' },
+];
+
+const TREND_WEEKS = 12;
+const RHYTHM_WEEKS = 8;
+
+function isPeriodKind(value: string | null): value is PeriodKind {
+  return PERIODS.some((p) => p.value === value);
+}
+
+/** Patterns from what you recorded: how it's going, what's changing, and what to try next. */
 export function InsightsPage() {
   const today = useToday();
   const weekStartsOn = useWeekStartsOn();
-  const weekStart = startOfWeek(today, weekStartsOn);
-  const week = useLiveData(
-    useCallback(
-      () => getRangeReport(weekStart, today, today, weekStartsOn, false),
-      [weekStart, today, weekStartsOn],
-    ),
+  const [params, setParams] = useSearchParams();
+  const raw = params.get('period');
+  const kind: PeriodKind = isPeriodKind(raw) ? raw : 'week';
+  const period = useMemo(
+    () => insightPeriod(kind, today, weekStartsOn),
+    [kind, today, weekStartsOn],
   );
-  const summaries = useLiveData(
-    useCallback(() => listHabitSummaries(today, weekStartsOn), [today, weekStartsOn]),
+
+  const data = useLiveData(
+    useCallback(async () => {
+      const trendFrom = addDays(startOfWeek(today, weekStartsOn), -7 * (TREND_WEEKS - 1));
+      const [current, previous, trend, summaries, occurrences] = await Promise.all([
+        getRangeReport(period.from, period.to, today, weekStartsOn, false),
+        getRangeReport(period.prevFrom, period.prevTo, today, weekStartsOn, false),
+        getRangeReport(trendFrom, today, today, weekStartsOn, true),
+        listHabitSummaries(today, weekStartsOn),
+        getRecentOccurrences(today, weekStartsOn, RHYTHM_WEEKS * 7),
+      ]);
+      return {
+        current: current.summary,
+        previous: previous.summary,
+        weeks: trend.weeks ?? [],
+        summaries,
+        occurrences,
+      };
+    }, [period, today, weekStartsOn]),
   );
 
   return (
-    <>
-      <PageHeader title="Insights" description="Patterns from what you’ve recorded." />
+    <div className="insights-page">
+      <PageHero
+        eyebrow="Your patterns"
+        title="Insights"
+        subtitle={
+          <>
+            What’s working, what’s changing, and <em>one next step</em>.
+          </>
+        }
+      />
 
-      <Section
-        title="This week"
-        meta={week.status === 'ready' ? percent(week.data.summary.habits.overall.rate) : undefined}
-      >
-        <LiveView state={week}>
-          {({ summary }) =>
-            summary.habits.perHabit.length === 0 ? (
-              <p className="muted small">No habit occurrences yet this week.</p>
-            ) : (
-              <ul className="result-list">
-                {summary.habits.perHabit.map(({ habitId, name, summary: s }) => (
-                  <li key={habitId} className="result-list__item">
-                    <Link to={`/habits/${habitId}`}>{name}</Link>
-                    <span className="muted small">
-                      {s.completed} of {s.completed + s.missed}
-                      {s.skipped > 0 ? ` · ${s.skipped} skipped` : ''}
-                      {s.pending > 0 ? ` · ${s.pending} to go` : ''}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )
-          }
-        </LiveView>
-      </Section>
-
-      <Section title="Streaks">
-        <LiveView state={summaries}>
-          {(items) => {
-            const ranked = items
-              .filter((s) => s.stats.totalCompletions > 0)
-              .sort(
-                (a, b) =>
-                  b.stats.currentStreak - a.stats.currentStreak ||
-                  b.stats.longestStreak - a.stats.longestStreak,
-              );
-            return ranked.length === 0 ? (
-              <p className="muted small">Streaks appear once you complete a habit.</p>
-            ) : (
-              <ul className="habit-list">
-                {ranked.map(({ habit, stats }) => (
-                  <li key={habit.id} className="habit-row">
-                    <CategoryIcon category={habit.category} size="sm" />
-                    <Link to={`/habits/${habit.id}`} className="habit-row__body">
-                      <span className="habit-row__name">{habit.name}</span>
-                      <span className="habit-row__meta">
-                        Longest {stats.longestStreak} · {stats.totalCompletions} total
-                      </span>
-                    </Link>
-                    <span
-                      className="streak-badge"
-                      aria-label={`Current streak ${stats.currentStreak}`}
-                    >
-                      <Flame size={14} aria-hidden="true" />
-                      {stats.currentStreak}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+      <div className="insights-page__filters">
+        <SegmentedControl
+          label="Period"
+          value={kind}
+          options={PERIODS}
+          onChange={(value) => {
+            setParams(
+              (current) => {
+                const next = new URLSearchParams(current);
+                if (value === 'week') next.delete('period');
+                else next.set('period', value);
+                return next;
+              },
+              { replace: true },
             );
           }}
-        </LiveView>
-      </Section>
+        />
+        <p className="insights-page__compare">Compared with {period.prevName}</p>
+      </div>
 
-      <RecentLearning today={today} />
+      <LiveView state={data} loadingLabel="Loading insights…" skeleton={<InsightsSkeleton />}>
+        {({ current, previous, weeks, summaries, occurrences }) => {
+          const habits = summaries.map((s) => s.habit);
+          const empty =
+            summaries.length === 0 &&
+            weeks.every((w) => w.tasksCompleted === 0 && w.plan.planned === 0);
+          if (empty) return <InsightsEmpty />;
 
-      <Section title="More">
-        <ul className="nav-list">
-          <li>
-            <Link to="/learn" className="nav-list__link">
-              <span className="nav-list__with-icon">
-                <Lightbulb size={18} aria-hidden="true" />
-                <span>
-                  <span className="nav-list__label">Notes and learning</span>
-                  <span className="nav-list__meta">Search, topics, review dates</span>
+          const pattern = weekdayPattern(occurrences, habits, weekStartsOn);
+          const extremes = weekdayExtremes(pattern);
+          return (
+            <div className="insights-grid">
+              <div className="insights-grid__main">
+                <ScoreHero
+                  score={momentumScore(current)}
+                  previousScore={momentumScore(previous)}
+                  current={current}
+                  previous={previous}
+                  period={period}
+                  story={headline(current, previous, period)}
+                />
+                <TrendCard key={weeks.at(-1)?.from} weeks={weeks} />
+                <ConsistencyCard
+                  current={current}
+                  previous={previous}
+                  summaries={summaries}
+                  period={period}
+                />
+                <StreaksCard summaries={summaries} />
+              </div>
+              <div className="insights-grid__side">
+                <KpiGrid current={current} previous={previous} period={period} />
+                <SuggestionsCard
+                  items={suggestions({ current, previous, period, habits, extremes })}
+                />
+                <WeekdayCard pattern={pattern} weeks={RHYTHM_WEEKS} />
+                <TasksCard summary={current} name={period.name} />
+                <AchievementsCard items={achievements(summaries.map((s) => s.stats))} />
+              </div>
+            </div>
+          );
+        }}
+      </LiveView>
+
+      <div className="insights-page__more">
+        <RecentLearning today={today} />
+
+        <Section title="More">
+          <ul className="nav-list">
+            <li>
+              <Link to="/learn" className="nav-list__link">
+                <span className="nav-list__with-icon">
+                  <Lightbulb size={18} aria-hidden="true" />
+                  <span>
+                    <span className="nav-list__label">Notes and learning</span>
+                    <span className="nav-list__meta">Search, topics, review dates</span>
+                  </span>
                 </span>
-              </span>
-              <ChevronRight size={18} aria-hidden="true" />
-            </Link>
-          </li>
-          <li>
-            <Link to="/tasks" className="nav-list__link">
-              <span className="nav-list__with-icon">
-                <ListTodo size={18} aria-hidden="true" />
-                <span>
-                  <span className="nav-list__label">Tasks</span>
-                  <span className="nav-list__meta">Inbox, active, done, and history</span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </Link>
+            </li>
+            <li>
+              <Link to="/tasks" className="nav-list__link">
+                <span className="nav-list__with-icon">
+                  <ListTodo size={18} aria-hidden="true" />
+                  <span>
+                    <span className="nav-list__label">Tasks</span>
+                    <span className="nav-list__meta">Inbox, active, done, and history</span>
+                  </span>
                 </span>
-              </span>
-              <ChevronRight size={18} aria-hidden="true" />
-            </Link>
-          </li>
-        </ul>
-      </Section>
-    </>
+                <ChevronRight size={18} aria-hidden="true" />
+              </Link>
+            </li>
+          </ul>
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+/** Before there's anything to measure: what will appear here, and how to start. */
+function InsightsEmpty() {
+  return (
+    <section className="insights-empty" aria-labelledby="insights-empty-title">
+      <span className="insights-empty__art" aria-hidden="true">
+        <Sprout size={30} />
+      </span>
+      <h2 id="insights-empty-title" className="insights-empty__title">
+        Insights grow as you go
+      </h2>
+      <p className="insights-empty__text">
+        Check in on a habit or plan a few tasks. After a few days you’ll see your momentum, your
+        best days of the week, streaks, and kind suggestions here.
+      </p>
+      <Link to="/habits/new" className="hero-cta insights-empty__cta">
+        <Plus size={18} aria-hidden="true" />
+        Create a habit
+      </Link>
+    </section>
+  );
+}
+
+function InsightsSkeleton() {
+  return (
+    <div className="insights-grid">
+      <div className="insights-grid__main">
+        <div className="skeleton skeleton--card" style={{ height: 220 }} />
+        <div className="skeleton skeleton--card" style={{ height: 260 }} />
+      </div>
+      <div className="insights-grid__side">
+        <div className="skeleton skeleton--card" style={{ height: 200 }} />
+        <div className="skeleton skeleton--card" style={{ height: 180 }} />
+      </div>
+    </div>
   );
 }

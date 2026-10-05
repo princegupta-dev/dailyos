@@ -1,0 +1,1061 @@
+/*
+ * Habit wizard: creating a habit in three steps, with a live preview. The same field cards
+ * appear in the edit form on a habit's page. Every value comes from tokens.css.
+ */
+
+/* ---------- Layout ---------- */
+
+.habit-wizard {
+  position: relative;
+}
+
+.habit-wizard__layout {
+  display: block;
+}
+
+/* Phones and tablets: a compact preview rides at the top of the form; the full one is in
+   the recap on the last step. */
+.habit-wizard__preview {
+  display: none;
+}
+
+.habit-wizard__compact-preview {
+  position: sticky;
+  z-index: 3;
+  top: calc(56px + var(--safe-top) + var(--space-2));
+  margin-bottom: var(--space-2);
+}
+
+@media (min-width: 1024px) {
+  .app-main:has(> .habit-wizard) {
+    max-width: 66rem;
+  }
+
+  .habit-wizard__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-6);
+  }
+
+  .habit-wizard__compact-preview {
+    display: none;
+  }
+
+  .habit-wizard__preview {
+    position: sticky;
+    top: calc(var(--space-7) + var(--space-5));
+    display: grid;
+    gap: var(--space-3);
+    animation: rise-in 480ms var(--ease-out) 120ms backwards;
+  }
+}
+
+.habit-wizard__preview-title {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.habit-wizard__preview-title em {
+  color: var(--color-primary-strong);
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---------- Steps ---------- */
+
+/* Three dots on a rail that fills as you go. */
+.wizard-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-steps::before,
+.wizard-steps::after {
+  content: '';
+  position: absolute;
+  top: 19px;
+  left: calc(100% / 6);
+  height: 3px;
+  border-radius: var(--radius-pill);
+}
+
+.wizard-steps::before {
+  right: calc(100% / 6);
+  background: var(--color-border);
+}
+
+/* The filled part of the rail: --wizard-progress (0 to 1) of its full length. */
+.wizard-steps::after {
+  width: calc(100% * 2 / 3 * var(--wizard-progress, 0));
+  background: var(--gradient-brand);
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+.wizard-steps__step {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+
+.wizard-steps__button {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wizard-steps__step:not(:has(.wizard-steps__button)) {
+  gap: var(--space-1);
+}
+
+.wizard-steps__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-sm);
+  transition:
+    background var(--duration) ease,
+    border-color var(--duration) ease,
+    color var(--duration) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.wizard-steps__label {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.wizard-steps__step--current .wizard-steps__dot {
+  border-color: transparent;
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+  box-shadow:
+    var(--shadow-primary),
+    0 0 0 5px var(--color-primary-ring);
+  transform: scale(1.06);
+}
+
+.wizard-steps__step--current .wizard-steps__label {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.wizard-steps__step--done .wizard-steps__dot {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.wizard-steps__button:hover .wizard-steps__dot {
+  transform: translateY(-2px);
+}
+
+.wizard-steps__step--done .wizard-steps__label {
+  color: var(--color-primary-strong);
+}
+
+/* Each step slides in when it opens. */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+.wizard-step {
+  display: grid;
+  gap: var(--space-4);
+  animation: step-in 360ms var(--ease-out);
+}
+
+.wizard-step__head {
+  margin-bottom: var(--space-1);
+}
+
+.wizard-step__count {
+  color: var(--color-primary-strong);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wizard-step .step-title {
+  margin-top: 2px;
+  font-size: var(--text-2xl);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.wizard-step__subtitle {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-style: italic;
+}
+
+.wizard-form {
+  gap: var(--space-4);
+}
+
+/* ---------- Cards ---------- */
+
+.wizard-card {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) + 2px);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* A fieldset's legend sits on its border by default; pull it inside the card. */
+fieldset.wizard-card > legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+fieldset.wizard-card > legend + * {
+  clear: both;
+}
+
+.wizard-card__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.wizard-card__legend svg {
+  color: var(--color-primary);
+}
+
+.wizard-card__hint {
+  margin-top: calc(-1 * var(--space-2));
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.wizard-card--reveal {
+  animation: rise-in var(--duration-slow) var(--ease-out);
+}
+
+/* One-tap suggestions under a field. */
+.idea-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.idea-row__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 2px;
+  color: var(--color-warm);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.idea-chip {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.idea-chip:hover {
+  border-color: var(--color-primary);
+  border-style: solid;
+  color: var(--color-primary-strong);
+}
+
+.idea-chip:active {
+  transform: scale(0.96);
+}
+
+.idea-chip[aria-pressed='true'] {
+  border-style: solid;
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: 600;
+}
+
+/* ---------- Category ---------- */
+
+.category-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.category-group + .category-group {
+  margin-top: var(--space-1);
+}
+
+.category-group__label {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wizard-card .category-grid {
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+}
+
+.wizard-card .category-option {
+  min-height: 48px;
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.wizard-card .category-option:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.wizard-card .category-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-faint);
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    var(--shadow-sm);
+  font-weight: 600;
+}
+
+.wizard-card .category-option:has(input:checked) .category-icon {
+  animation: check-pop 300ms var(--ease-out);
+}
+
+.category-hint {
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+/* ---------- Look ---------- */
+
+.appearance__stage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-glow), var(--color-primary-faint);
+}
+
+.appearance__stage .wizard-card__hint {
+  margin: 0;
+}
+
+.appearance__stage .category-icon {
+  box-shadow: var(--shadow-md);
+  transition:
+    background-color var(--duration) ease,
+    color var(--duration) ease;
+}
+
+.appearance__group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.appearance__label {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 6px;
+}
+
+.icon-option,
+.tone-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.icon-option {
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
+}
+
+/* The real radio sits invisibly on top of its drawing, so it takes every click and tap. */
+.icon-option input,
+.tone-option input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.icon-option:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.icon-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+.icon-option:has(input:focus-visible),
+.tone-option:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.tone-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tone-option__swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  transition:
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.tone-option:hover .tone-option__swatch {
+  transform: scale(1.08);
+}
+
+.tone-option:has(input:checked) .tone-option__swatch {
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-primary);
+}
+
+/* ---------- Flexibility ---------- */
+
+/* Three tiers of done; the ones that are set light up. */
+.completion-rule {
+  background:
+    linear-gradient(150deg, var(--color-primary-faint), transparent 60%), var(--color-surface);
+}
+
+.completion-rule__tiers {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.completion-rule__tier {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  transition:
+    border-color var(--duration) ease,
+    background-color var(--duration) ease,
+    color var(--duration) ease;
+}
+
+.completion-rule__tier--on {
+  border-style: solid;
+  border-color: var(--color-primary-soft);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.completion-rule__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken);
+  color: var(--color-subtle);
+  transition:
+    background var(--duration) ease,
+    color var(--duration) ease;
+}
+
+.completion-rule__tier--on .completion-rule__icon {
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+}
+
+.completion-rule__name {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.completion-rule__value {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.alternatives {
+  gap: var(--space-2);
+}
+
+.alternatives__empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.alt-list__row {
+  animation: rise-in var(--duration-slow) var(--ease-out);
+}
+
+.alt-list__index {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+/* ---------- Schedule ---------- */
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.schedule-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.schedule-option input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.schedule-option:hover {
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.schedule-option:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.schedule-option__icon {
+  display: inline-flex;
+  grid-row: span 2;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  transition:
+    background var(--duration) ease,
+    color var(--duration) ease;
+}
+
+.schedule-option__label {
+  font-weight: 600;
+}
+
+.schedule-option__hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.schedule-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-faint);
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    var(--shadow-sm);
+}
+
+.schedule-option:has(input:checked) .schedule-option__icon {
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+/* Phones: each card stacks its icon, label, and hint so labels stay on one line. */
+@media (max-width: 479px) {
+  .schedule-option {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    row-gap: 2px;
+    padding: var(--space-3);
+  }
+
+  .schedule-option__icon {
+    grid-row: auto;
+    margin-bottom: var(--space-1);
+  }
+}
+
+/* Goal: a target with a stepper, a unit, and the goal read back as a sentence. */
+.goal__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.goal__target {
+  position: relative;
+}
+
+.goal__target .input {
+  padding-right: 88px;
+}
+
+.stepper-buttons {
+  position: absolute;
+  top: 28px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.stepper-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.stepper-button:hover:not(:disabled) {
+  background: var(--color-primary-faint);
+}
+
+.stepper-button:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.stepper-button:disabled {
+  color: var(--color-subtle);
+  cursor: not-allowed;
+}
+
+.goal__sentence {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-faint);
+  color: var(--color-text-muted);
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.goal__sentence strong {
+  color: var(--color-primary-strong);
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* When: four time cards, each lit in its own light. */
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.time-option {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: var(--space-3) var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    background var(--duration) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.time-option input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.time-option:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-border-strong);
+}
+
+.time-option:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.time-option__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+}
+
+.time-option:has(input:checked) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.time-option:has(input:checked) .time-option__icon {
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+}
+
+.time-option--morning:has(input:checked) {
+  background: linear-gradient(180deg, var(--color-warm-soft), var(--color-surface));
+}
+
+.time-option--afternoon:has(input:checked) {
+  background: linear-gradient(180deg, var(--tone-amber-bg), var(--color-surface));
+}
+
+.time-option--evening:has(input:checked) {
+  background: linear-gradient(180deg, var(--tone-indigo-bg), var(--color-surface));
+}
+
+.when__note {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* ---------- Preview ---------- */
+
+.habit-preview {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) + 4px);
+  background: var(--gradient-glow), var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.habit-preview--full {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.habit-preview--compact {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  backdrop-filter: saturate(1.6) blur(14px);
+}
+
+.habit-preview__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.habit-preview__head .category-icon {
+  transition:
+    background-color var(--duration) ease,
+    color var(--duration) ease;
+}
+
+.habit-preview__titles {
+  min-width: 0;
+}
+
+.habit-preview__eyebrow {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.habit-preview__name {
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.habit-preview--full .habit-preview__name {
+  font-size: var(--text-xl);
+}
+
+.habit-preview__name--empty {
+  color: var(--color-subtle);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.habit-preview__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.habit-preview__fact {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-glass);
+}
+
+.habit-preview__fact-icon {
+  display: inline-flex;
+  grid-row: span 2;
+  color: var(--color-primary);
+}
+
+.habit-preview__fact-label {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.habit-preview__fact-value {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.habit-preview__flex {
+  display: grid;
+  gap: 4px;
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-border-strong);
+}
+
+.habit-preview__flex-title {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.habit-preview__flex-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--text-sm);
+}
+
+.habit-preview__flex-row svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--color-warm);
+}
+
+.habit-preview__flex-row em {
+  font-family: var(--font-serif);
+}
+
+.habit-preview__why {
+  color: var(--color-text-muted);
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* The last step's recap before creating. */
+.wizard-recap {
+  display: grid;
+  gap: var(--space-2);
+  animation: rise-in 480ms var(--ease-out) 120ms backwards;
+}
+
+/* Wide screens show the live preview beside the form, so the recap would repeat it. */
+@media (min-width: 1024px) {
+  .wizard-recap {
+    display: none;
+  }
+}
+
+.wizard-recap__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-primary-strong);
+  font-weight: 700;
+}
+
+.wizard-recap__title em {
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+/* "tomorrow" → "Tomorrow" where a day label starts a value. */
+.detail-list__capitalize::first-letter {
+  text-transform: uppercase;
+}
+
+/* ---------- Actions ---------- */
+
+.wizard-actions {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.wizard-actions__primary {
+  min-height: 52px;
+  background: var(--gradient-brand);
+  font-size: var(--text-md);
+}
+
+.wizard-actions__primary svg {
+  transition: transform var(--duration) var(--ease-out);
+}
+
+.wizard-actions__primary:hover:not(:disabled) svg {
+  transform: translateX(3px);
+}

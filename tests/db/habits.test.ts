@@ -184,3 +184,54 @@ describe('local date boundaries', () => {
     });
   });
 });
+
+describe('habit appearance, timing, and start', () => {
+  it('saves its own icon, tone, time of day, and cue', async () => {
+    const habit = await createHabit({
+      name: 'Meditate',
+      category: 'mindfulness',
+      frequency: 'daily',
+      icon: 'brain',
+      tone: 'teal',
+      timeOfDay: 'morning',
+      cue: 'After coffee',
+    });
+    expect(habit).toMatchObject({
+      category: 'mindfulness',
+      icon: 'brain',
+      tone: 'teal',
+      timeOfDay: 'morning',
+      cue: 'After coffee',
+    });
+  });
+
+  it('starts on a chosen future day and never in the past', async () => {
+    const later = await createHabit({ name: 'Run', frequency: 'daily', startDate: '2026-10-05' });
+    expect(later.startDate).toBe('2026-10-05');
+    expect((await getHabitsForDay('2026-09-28', '2026-09-28', 1)).map((h) => h.habit.id)).toEqual(
+      [],
+    );
+
+    await expect(
+      createHabit({ name: 'Read', frequency: 'daily', startDate: '2026-09-27' }),
+    ).rejects.toMatchObject({ kind: 'validation', issues: [{ path: 'startDate' }] });
+  });
+
+  it('keeps the start date when edited, and clears appearance left out of the edit', async () => {
+    const habit = await createHabit({
+      name: 'Run',
+      frequency: 'daily',
+      startDate: '2026-10-05',
+      icon: 'bike',
+      cue: 'After work',
+    });
+    const edited = await updateHabit(habit.id, {
+      name: 'Run',
+      frequency: 'daily',
+      startDate: '2026-10-20',
+    });
+    expect(edited.startDate).toBe('2026-10-05');
+    expect(edited).not.toHaveProperty('icon');
+    expect(edited).not.toHaveProperty('cue');
+  });
+});

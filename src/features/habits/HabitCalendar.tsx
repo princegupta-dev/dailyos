@@ -1,12 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import {
-  isActiveOn,
-  isScheduledOn,
-  WEEKDAY_SHORT,
-  type Habit,
-  type HabitEntry,
-} from '@/domain/habit';
+import { isScheduledOn, WEEKDAY_SHORT, type Habit, type HabitEntry } from '@/domain/habit';
 import {
   addDays,
   addMonths,
@@ -16,9 +10,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from '@/lib/dates';
-
-type DayState =
-  'completed' | 'skipped' | 'missed' | 'pending' | 'unscheduled' | 'future' | 'outside';
+import { dayState, type DayState } from './habitHistory';
 
 const STATE_LABEL: Record<DayState, string> = {
   completed: 'done',
@@ -37,21 +29,6 @@ interface HabitCalendarProps {
   weekStartsOn: number;
   /** Called for a scheduled day on or before today, to log or correct it. */
   onSelectDay?: ((date: string) => void) | undefined;
-}
-
-function dayState(
-  habit: Habit,
-  entry: HabitEntry | undefined,
-  date: string,
-  today: string,
-): DayState {
-  if (entry) return entry.status;
-  if (date > today) return isScheduledOn(habit, date) ? 'future' : 'unscheduled';
-  if (!isActiveOn(habit, date)) return 'unscheduled';
-  // Weekly habits are judged per week, so an individual day without an entry isn't a miss.
-  if (habit.frequency === 'weekly') return 'unscheduled';
-  if (!isScheduledOn(habit, date)) return 'unscheduled';
-  return date === today ? 'pending' : 'missed';
 }
 
 /** Month view. Unscheduled days are visually neutral so they never read as failures. */

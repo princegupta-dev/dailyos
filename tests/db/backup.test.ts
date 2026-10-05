@@ -9,6 +9,7 @@ import {
 import { createHabit, setHabitStatus } from '@/db/repositories/habits';
 import { createLearningEntry } from '@/db/repositories/learning';
 import { planTask, updatePlanDetails } from '@/db/repositories/plans';
+import { saveItemReflection } from '@/db/repositories/reflections';
 import { saveReview } from '@/db/repositories/reviews';
 import { createTask } from '@/db/repositories/tasks';
 import { CURRENT_SCHEMA_VERSION } from '@/db/schema';
@@ -42,6 +43,13 @@ async function seed(prefix = '') {
   await saveReview(periodContaining('daily', TODAY, 1), {
     wins: `${prefix}Shipped`,
     actions: [{ title: `${prefix}Plan tomorrow` }],
+  });
+  await saveItemReflection({ type: 'habit', id: habit.id }, TODAY, {
+    rating: 4,
+    wentWell: `${prefix}Read before bed`,
+  });
+  await saveItemReflection({ type: 'task', id: task.id }, TODAY, {
+    gotInTheWay: `${prefix}Meetings`,
   });
   return { task, habit };
 }
@@ -145,6 +153,8 @@ describe('merge', () => {
     expect(await db.habitEntries.count()).toBe(2);
     expect(await db.tasks.count()).toBe(2);
     expect(await db.learningEntries.count()).toBe(2);
+    // Reflections are on different habits and tasks, so both devices' are kept.
+    expect(await db.itemReflections.count()).toBe(4);
     // …but today's plan and review on this device win, and their children aren't orphaned.
     expect(result.added.dailyPlans).toBe(0);
     expect(result.added.planItems).toBe(0);
@@ -152,6 +162,22 @@ describe('merge', () => {
     expect(result.added.reviewActions).toBe(0);
     expect(preview.kept.dailyPlans).toBe(1);
     expect((await db.dailyPlans.toArray())[0]?.intention).toBe('Mine Calm focus');
+  });
+
+  it('keeps this device’s reflection when the backup has one for the same habit and day', async () => {
+    const { habit } = await seed();
+    const backup = await exportAndRead();
+    // Same habit and day, written again here under a new id.
+    await saveItemReflection({ type: 'habit', id: habit.id }, TODAY, {});
+    await saveItemReflection({ type: 'habit', id: habit.id }, TODAY, { wentWell: 'Mine' });
+    backup.data.itemReflections = backup.data.itemReflections.filter(
+      (r) => r.subjectType === 'habit',
+    );
+
+    const result = await restoreBackup(backup, 'merge');
+    expect(result.added.itemReflections).toBe(0);
+    const stored = await db.itemReflections.toArray();
+    expect(stored.filter((r) => r.subjectId === habit.id).map((r) => r.wentWell)).toEqual(['Mine']);
   });
 
   it('adds nothing when restoring a backup of this same device', async () => {

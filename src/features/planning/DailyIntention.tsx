@@ -1,3 +1,4 @@
+import { Compass, Quote, Target } from 'lucide-react';
 import { useCallback, useState, type SyntheticEvent } from 'react';
 import { LiveView } from '@/components/LiveView';
 import { Section } from '@/components/Section';
@@ -73,34 +74,50 @@ function IntentionForm({ date, plan }: { date: string; plan: DailyPlan | undefin
 
   return (
     <form onSubmit={(e) => void save(e)}>
-      <Section title="Intention">
-        <label className="visually-hidden" htmlFor="daily-intention">
-          Today’s intention
-        </label>
-        <textarea
-          id="daily-intention"
-          className="input input--textarea intention-input"
-          rows={2}
-          maxLength={500}
-          placeholder="How do you want today to go? (optional)"
-          value={shown.intention}
-          onChange={(e) => {
-            const intention = e.target.value;
-            edit((d) => ({ ...d, intention }));
-          }}
-        />
+      <Section
+        title="Intention"
+        icon={Compass}
+        description="What matters most today?"
+        className="section--focus"
+      >
+        <div className="intention-card">
+          <Quote className="intention-card__mark" size={28} aria-hidden="true" />
+          <label className="visually-hidden" htmlFor="daily-intention">
+            Today’s intention
+          </label>
+          <textarea
+            id="daily-intention"
+            className="intention-input"
+            rows={2}
+            maxLength={500}
+            placeholder="Write one line that sets the tone for today…"
+            value={shown.intention}
+            onChange={(e) => {
+              const intention = e.target.value;
+              edit((d) => ({ ...d, intention }));
+            }}
+          />
+          <p className="intention-card__hint" aria-hidden="true">
+            {shown.intention.trim() === '' ? 'Optional · just for you' : 'Your focus for today'}
+          </p>
+        </div>
       </Section>
 
       <Section
         title="Priorities"
+        icon={Target}
+        description="Up to three things that would make today count"
         meta={savedCount > 0 ? `${doneCount} of ${savedCount} done` : undefined}
       >
         <ol className="outcome-list">
           {shown.outcomes.map((outcome, index) => (
             <li
               key={outcome.id ?? `new-${index}`}
-              className="outcome-list__item outcome-list__item--editable"
+              className={`outcome-list__item outcome-list__item--editable${outcome.done ? ' outcome-list__item--done' : ''}${index === 0 ? ' outcome-list__item--top' : ''}`}
             >
+              <span className="outcome-list__rank" aria-hidden="true">
+                {index + 1}
+              </span>
               <input
                 type="checkbox"
                 className="checkbox"

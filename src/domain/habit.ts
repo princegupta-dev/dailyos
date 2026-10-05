@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { addDays, eachDay, startOfWeek, weekdayOf } from '@/lib/dates';
 import { dateKeySchema, idSchema, optionalText, timestampSchema } from '@/lib/validation';
 import { activityLogSchema } from './activityLog';
+import { HABIT_ICONS, HABIT_TONES, TIMES_OF_DAY } from './appearance';
 import { HABIT_CATEGORIES } from './categories';
 
 export const HABIT_FREQUENCIES = ['daily', 'weekly', 'selected_days'] as const;
@@ -34,6 +35,12 @@ export const habitSchema = z.object({
   minimumTarget: optionalText(120),
   /** Other activities that also count, e.g. "Running" for a gym habit. */
   alternatives: z.array(z.string().trim().min(1).max(60)).max(8).optional(),
+  /** Own icon and tile color. Absent means the category's (see CATEGORY_APPEARANCE). */
+  icon: z.enum(HABIT_ICONS).optional(),
+  tone: z.enum(HABIT_TONES).optional(),
+  /** When it usually happens, and what it follows ("after coffee"). Shown, never notified. */
+  timeOfDay: z.enum(TIMES_OF_DAY).optional(),
+  cue: optionalText(80),
   /** First local date the habit counts. Entries and occurrences before it are ignored. */
   startDate: dateKeySchema,
   position: z.number().int().min(0),
@@ -56,6 +63,12 @@ export const habitDraftSchema = z
     unit: optionalText(20),
     minimumTarget: optionalText(120),
     alternatives: z.array(z.string().trim().max(60)).max(8, 'Up to 8 alternatives').optional(),
+    icon: z.enum(HABIT_ICONS).optional(),
+    tone: z.enum(HABIT_TONES).optional(),
+    timeOfDay: z.enum(TIMES_OF_DAY).optional(),
+    cue: optionalText(80),
+    /** Creation only: the first day the habit counts. Defaults to today. */
+    startDate: dateKeySchema.optional(),
   })
   .refine((h) => h.frequency !== 'selected_days' || (h.weekdays?.length ?? 0) > 0, {
     path: ['weekdays'],

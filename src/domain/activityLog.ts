@@ -15,6 +15,7 @@ export interface LogField {
 }
 
 const duration: LogField = { key: 'durationMin', label: 'Duration', kind: 'number', unit: 'min' };
+const notes: LogField = { key: 'notes', label: 'Notes', kind: 'longtext' };
 
 export const LOG_FIELDS: Record<HabitCategory, readonly LogField[]> = {
   fitness: [
@@ -78,7 +79,64 @@ export const LOG_FIELDS: Record<HabitCategory, readonly LogField[]> = {
     },
     { key: 'change', label: 'Environment change to try', kind: 'text' },
   ],
-  other: [{ key: 'notes', label: 'Notes', kind: 'longtext' }],
+  health: [
+    {
+      key: 'healthDone',
+      label: 'What I did',
+      kind: 'text',
+      placeholder: '8 glasses, 9,200 steps, cooked dinner…',
+    },
+    notes,
+  ],
+  sleep: [
+    { key: 'bedtime', label: 'Bedtime', kind: 'text', placeholder: '23:10' },
+    { key: 'sleepHours', label: 'Hours slept', kind: 'number', unit: 'hours' },
+    { key: 'rested', label: 'How rested', kind: 'select', options: ['Great', 'Okay', 'Tired'] },
+  ],
+  mindfulness: [
+    duration,
+    {
+      key: 'practice',
+      label: 'Practice',
+      kind: 'text',
+      placeholder: 'Breathing, body scan, journaling…',
+    },
+    { key: 'cameUp', label: 'What came up', kind: 'longtext' },
+  ],
+  learning: [
+    { key: 'subject', label: 'Subject or course', kind: 'text' },
+    duration,
+    { key: 'learned', label: 'What I learned', kind: 'longtext' },
+  ],
+  creativity: [
+    { key: 'project', label: 'Project', kind: 'text' },
+    duration,
+    { key: 'made', label: 'What I made', kind: 'longtext' },
+  ],
+  finance: [
+    {
+      key: 'moneyDone',
+      label: 'What I did',
+      kind: 'text',
+      placeholder: 'Logged spending, moved savings…',
+    },
+    notes,
+  ],
+  relationships: [
+    { key: 'person', label: 'Who', kind: 'text' },
+    {
+      key: 'connection',
+      label: 'How we connected',
+      kind: 'select',
+      options: ['Call', 'Message', 'In person', 'Other'],
+    },
+    notes,
+  ],
+  home: [
+    { key: 'homeDone', label: 'What I did', kind: 'text', placeholder: 'Kitchen, laundry…' },
+    duration,
+  ],
+  other: [notes],
 };
 
 /**

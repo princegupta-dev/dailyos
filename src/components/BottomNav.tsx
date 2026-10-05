@@ -31,6 +31,10 @@ function isActive(item: NavItem, pathname: string): boolean {
   return item.matches.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
+/**
+ * The app's tab bar: docked to the bottom on phones, a side rail on wider screens. The active
+ * tab's icon sits in a brand-gradient pill that grows in when the tab is chosen.
+ */
 export function BottomNav() {
   const { pathname } = useLocation();
   return (
@@ -46,8 +50,10 @@ export function BottomNav() {
                 className="bottom-nav__link"
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon size={22} strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
-                <span>{item.label}</span>
+                <span className="bottom-nav__icon" aria-hidden="true">
+                  <Icon size={22} strokeWidth={active ? 2.25 : 1.75} />
+                </span>
+                <span className="bottom-nav__label">{item.label}</span>
               </Link>
             </li>
           );

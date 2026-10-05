@@ -62,13 +62,14 @@ export interface MergePlan {
 /**
  * Merge keeps everything already on this device and adds only what's new. A record is "already
  * here" when its id exists, or when this device has its own plan for that date, check-in for
- * that habit and date, or review for that period. Children of a record that wasn't added
- * (plan items, review actions) are left out too, so nothing points at a missing parent.
+ * that habit and date, review for that period, or reflection on that habit or task that date.
+ * Children of a record that wasn't added (plan items, review actions) are left out too, so
+ * nothing points at a missing parent.
  */
 async function planMerge(data: BackupData): Promise<MergePlan> {
   const has = async (table: string) =>
     new Set((await db.table(table).toCollection().primaryKeys()) as string[]);
-  const [localIds, planDates, entryKeys, reviewKeys] = await Promise.all([
+  const [localIds, planDates, entryKeys, reviewKeys, reflectionKeys] = await Promise.all([
     Promise.all(BACKUP_TABLES.map(async (t) => [t, await has(t)] as const)).then(
       (pairs) => new Map(pairs),
     ),
@@ -77,6 +78,9 @@ async function planMerge(data: BackupData): Promise<MergePlan> {
     db.reviews
       .toArray()
       .then((rows) => new Set(rows.map((r) => `${r.periodType}|${r.periodStart}`))),
+    db.itemReflections
+      .toArray()
+      .then((rows) => new Set(rows.map((r) => `${r.subjectType}|${r.subjectId}|${r.date}`))),
   ]);
   const isNew = (table: (typeof BACKUP_TABLES)[number], id: string) =>
     !(localIds.get(table)?.has(id) ?? false);
@@ -105,6 +109,11 @@ async function planMerge(data: BackupData): Promise<MergePlan> {
     reviews,
     reviewActions: data.reviewActions.filter(
       (a) => isNew('reviewActions', a.id) && reviewIds.has(a.reviewId),
+    ),
+    itemReflections: data.itemReflections.filter(
+      (r) =>
+        isNew('itemReflections', r.id) &&
+        !reflectionKeys.has(`${r.subjectType}|${r.subjectId}|${r.date}`),
     ),
   };
   const total = countRecords(data);
