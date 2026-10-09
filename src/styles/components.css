@@ -3489,6 +3489,11 @@
 
 /* ---------- Bottom navigation (side rail on wider screens) ---------- */
 
+/* Keep scrolled-to and focused elements clear of the fixed bottom nav. */
+html {
+  scroll-padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+}
+
 .bottom-nav {
   position: fixed;
   inset: auto 0 0 0;
@@ -3621,6 +3626,10 @@
 }
 
 @media (min-width: 768px) {
+  html {
+    scroll-padding-bottom: 0;
+  }
+
   .app-shell {
     padding-left: calc(var(--nav-rail-width) + var(--safe-left));
   }
@@ -5929,6 +5938,9 @@
   justify-content: center;
   width: 28px;
   height: 28px;
+  /* Decorative: the transparent input covering the label takes every tap. Without this the
+     :active scale transform lifts the box above the input mid-click. */
+  pointer-events: none;
   /* Needs 3:1 contrast as a control boundary, so not the decorative border colour. */
   border: 2px solid var(--color-subtle);
   border-radius: var(--radius-sm);
