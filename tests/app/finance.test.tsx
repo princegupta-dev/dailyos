@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHabit } from '@/db/repositories/habits';
 import { getFinanceData, loadSampleFinance } from '@/db/repositories/finance';
+import { formatINR, PAISE_PER_RUPEE } from '@/lib/money';
 import { resetDatabase, setNow } from '../helpers/db';
 import { renderApp } from '../helpers/render';
 
@@ -167,7 +168,10 @@ describe('Money across the app', () => {
     await user.type(within(dialog).getByLabelText('Amount (₹)'), '50000');
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Income recorded')).toBeInTheDocument();
-    expect((await within(money).findAllByText('₹50K')).length).toBeGreaterThan(0);
+    // Compact output differs across Node versions (₹50K on Node 24, ₹50.0K on Node 22), so the
+    // expectation comes from the same formatter the UI uses.
+    const income = formatINR(50_000 * PAISE_PER_RUPEE, { compact: true });
+    expect((await within(money).findAllByText(income)).length).toBeGreaterThan(0);
     expect(within(money).getByRole('link', { name: 'Investments' })).toHaveAttribute(
       'href',
       '/investments',

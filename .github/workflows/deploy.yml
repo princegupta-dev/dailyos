@@ -21,24 +21,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Lint, format, types, unit tests, build
         run: pnpm check
-      - name: End-to-end tests (Chrome is preinstalled on the runner)
+      # Install Chrome explicitly rather than relying on what the runner image ships with,
+      # so the job keeps working as ubuntu-latest moves to newer Ubuntu releases.
+      - name: Install Google Chrome for end-to-end tests
+        run: pnpm exec playwright install --with-deps chrome
+      - name: End-to-end tests
         run: pnpm test:e2e
       - name: Build for the Pages sub-path
         run: pnpm build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -50,4 +54,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
