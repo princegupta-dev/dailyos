@@ -1,66 +1,72 @@
 /*
- * DailyOS design tokens: calm sage-forest on warm ivory. Components reference these
- * variables only; raw values live here.
- * Contrast (checked): text 14.3:1 and muted 5.4:1 on --color-bg; primary 5.4:1 on bg;
- * white on primary 6.0:1. --color-subtle (3.8:1) is for decorative lines/icons only.
+ * DailyOS design tokens: navy, royal blue, and pale blues on off-white. Components reference
+ * these variables only; raw values live here.
+ * Palette: Midnight Black #05070d (in gradient 2), Dark Navy #182038, Deep Navy #283848,
+ * Primary Blue #4870d0, Secondary Blue #7090d8, Soft Blue #90a8e0, Light Blue #d8e0f0,
+ * Pale Blue #d8e8f0, Off White #f8f8f8, black, and white. Solid values not in that list are
+ * blends of two palette colors, noted inline; the gradients below add their own stops.
+ * Contrast (checked): text 19.8:1 and muted 5.4:1 on --color-bg; primary 4.4:1 on bg;
+ * white on primary 4.7:1. --color-subtle (3.5:1) is for decorative lines/icons only.
  */
 :root {
   /* Color */
-  --color-primary: #4a6b4f;
-  --color-primary-strong: #38543d;
-  --color-primary-soft: #e6ece3;
-  --color-primary-faint: #f0f3ed;
+  --color-primary: #4870d0;
+  --color-primary-strong: #283848;
+  --color-primary-soft: #d8e0f0;
+  --color-primary-faint: #ecf0f8; /* Light Blue 50% + White */
   --color-on-primary: #ffffff;
 
-  --color-bg: #f6f4ee;
-  --color-surface: #fdfcf9;
-  --color-surface-sunken: #efede6;
-  --color-border: #e7e3d8;
-  --color-border-strong: #d3cdbf;
+  --color-bg: #f8f8f8;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #e8f0f4; /* Pale Blue 50% + Off White */
+  --color-border: #d8e0f0;
+  --color-border-strong: #c8d4f0; /* Soft Blue 50% + White */
 
-  --color-text: #1f2420;
-  --color-text-muted: #5e6660;
-  --color-subtle: #767e78;
+  --color-text: #000000;
+  --color-text-muted: #5c6874; /* Deep Navy 75% + Off White */
+  --color-subtle: #7b858e; /* Deep Navy 60% + Off White */
   --color-danger: #a8433a;
   --color-danger-strong: #923a32;
   --color-danger-soft: #f8e9e6;
-  --color-focus: #4a6b4f;
+  --color-focus: #4870d0;
   /* Translucent variants of the palette above, for focus halos and frosted bars. */
-  --color-primary-ring: rgb(74 107 79 / 18%);
+  --color-primary-ring: rgb(72 112 208 / 18%);
   /* Start and end of the ripple that spreads from a box as it's ticked. */
-  --color-primary-burst: rgb(74 107 79 / 45%);
-  --color-primary-burst-end: rgb(74 107 79 / 0%);
+  --color-primary-burst: rgb(72 112 208 / 45%);
+  --color-primary-burst-end: rgb(72 112 208 / 0%);
   --color-danger-ring: rgb(168 67 58 / 16%);
-  --color-surface-glass: rgb(253 252 249 / 86%);
-  --color-bg-glass: rgb(246 244 238 / 86%);
-  --color-hover: rgb(31 36 32 / 4%);
+  --color-surface-glass: rgb(255 255 255 / 86%);
+  --color-bg-glass: rgb(248 248 248 / 86%);
+  --color-hover: rgb(24 32 56 / 4%);
   --color-hover-on-dark: rgb(255 255 255 / 14%);
-  --color-backdrop: rgb(29 34 31 / 38%);
+  --color-backdrop: rgb(24 32 56 / 38%);
   /* Primary lightened for use on the dark toast surface. */
-  --color-primary-on-dark: #b9d1b4;
-  --color-pressed: rgb(31 36 32 / 7%);
+  --color-primary-on-dark: #90a8e0;
+  --color-pressed: rgb(24 32 56 / 7%);
 
   /* Supporting accents. Warm is reserved for priority and attention cues; dusk (a deep
-     sage) for reflective surfaces such as the evening review. White text stays at least
-     6:1 across --gradient-dusk. */
+     navy) for reflective surfaces such as the evening review. White text stays at least
+     4.6:1 across the dark gradients. */
   --color-warm: #976122;
   --color-warm-soft: #f8ecdb;
-  --color-dusk: #2c4231;
-  --color-dusk-soft: #e3eadf;
+  --color-dusk: #182038;
+  --color-dusk-soft: #d8e8f0;
   /* Text and lines on dusk surfaces. Muted text stays above 7:1 on the darkest stop. */
   --color-on-dark-muted: rgb(255 255 255 / 82%);
   --color-on-dark-line: rgb(255 255 255 / 22%);
   --color-on-dark-fill: rgb(255 255 255 / 9%);
 
-  /* Gradients built only from the palette above. */
-  --gradient-brand: linear-gradient(135deg, #38543d 0%, #4a6b4f 50%, #6b8758 100%);
-  --gradient-dusk: linear-gradient(150deg, #2c4231 0%, #38543d 55%, #4a6b4f 100%);
-  --gradient-glow: radial-gradient(
-    120% 120% at 100% 0%,
-    rgb(74 107 79 / 14%) 0%,
-    rgb(151 97 34 / 5%) 45%,
-    transparent 70%
-  );
+  /* The four theme gradients, all diagonal (135deg, top-left to bottom-right). Each has one
+     job; text contrast was checked against every stop it sits on.
+     1. Primary dark: heroes, review cards, primary actions, data fills. White text >= 4.6:1.
+     2. Secondary dark: statistic cards (net worth, insights score). White text >= 6.1:1.
+     3. Light: soft containers on the page. Black text >= 14:1.
+     4. Blue: selected states and icon highlights. Glyphs sit on the mid stop (white 3.1:1);
+        never behind text or data, since its end fades to near white. */
+  --gradient-primary-dark: linear-gradient(135deg, #101522 0%, #20375f 50%, #4870d0 100%);
+  --gradient-secondary-dark: linear-gradient(135deg, #05070d 0%, #182038 50%, #355fae 100%);
+  --gradient-light: linear-gradient(135deg, #f8faff 0%, #e5ecfa 50%, #c5d5f3 100%);
+  --gradient-blue: linear-gradient(135deg, #315fc2 0%, #7090d8 50%, #d8e8f8 100%);
 
   /* Tones for habit tiles: soft background + icon color. Every pair is at least 4.5:1. */
   --tone-sage-bg: #e3efe9;
@@ -81,6 +87,18 @@
   --tone-amber-fg: #976122;
   --tone-slate-bg: #ebeae4;
   --tone-slate-fg: #5e6660;
+
+  /* Categorical chart colors, in this fixed order. Validated as a set for color-vision
+     deficiency (adjacent pairs) on the light surface; charts always pair them with labels.
+     Assign by a stable key (e.g. investment type), never by rank. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
 
   /* Typography — system fonts only, so nothing is fetched over the network. */
   --font-sans:
@@ -112,21 +130,25 @@
   --space-7: 3rem;
 
   /* Shape and depth */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgb(31 36 32 / 4%), 0 1px 1px rgb(31 36 32 / 2%);
-  --shadow-md: 0 6px 20px -6px rgb(31 36 32 / 12%), 0 2px 6px rgb(31 36 32 / 4%);
-  --shadow-lg: 0 24px 48px -16px rgb(31 36 32 / 24%), 0 6px 16px rgb(31 36 32 / 6%);
+  /* Subtly rounded, never pill-shaped: controls that were pills now share --radius-pill's
+     small corner. --radius-round is only for things whose shape is a circle (spinners,
+     rings, avatars, dots). */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 8px;
+  --radius-round: 999px;
+  --shadow-sm: 0 1px 2px rgb(24 32 56 / 4%), 0 1px 1px rgb(24 32 56 / 2%);
+  --shadow-md: 0 6px 20px -6px rgb(24 32 56 / 12%), 0 2px 6px rgb(24 32 56 / 4%);
+  --shadow-lg: 0 24px 48px -16px rgb(24 32 56 / 24%), 0 6px 16px rgb(24 32 56 / 6%);
   /* Filled buttons: a top highlight and a soft drop. */
-  --shadow-filled: inset 0 1px 0 rgb(255 255 255 / 12%), 0 1px 2px rgb(31 36 32 / 12%);
-  /* A green glow under selected primary controls. */
-  --shadow-primary: 0 2px 8px -2px rgb(74 107 79 / 40%);
-  --shadow-primary-lift: 0 8px 20px -6px rgb(74 107 79 / 55%);
-  --glow-primary: drop-shadow(0 0 10px rgb(74 107 79 / 35%));
-  --shadow-inset: inset 0 1px 2px rgb(31 36 32 / 3%);
-  --shadow-knob: 0 1px 3px rgb(31 36 32 / 20%);
+  --shadow-filled: inset 0 1px 0 rgb(255 255 255 / 12%), 0 1px 2px rgb(24 32 56 / 12%);
+  /* A blue glow under selected primary controls. */
+  --shadow-primary: 0 2px 8px -2px rgb(72 112 208 / 40%);
+  --shadow-primary-lift: 0 8px 20px -6px rgb(72 112 208 / 55%);
+  --glow-primary: drop-shadow(0 0 10px rgb(72 112 208 / 35%));
+  --shadow-inset: inset 0 1px 2px rgb(24 32 56 / 3%);
+  --shadow-knob: 0 1px 3px rgb(24 32 56 / 20%);
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);

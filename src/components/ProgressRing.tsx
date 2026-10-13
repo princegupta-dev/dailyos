@@ -44,9 +44,10 @@ export function ProgressRing({
       {tone === 'gradient' && (
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#6b8758" />
-            <stop offset="55%" stopColor="#4a6b4f" />
-            <stop offset="100%" stopColor="#38543d" />
+            {/* The primary dark gradient (--gradient-primary-dark); SVG can't read CSS gradients. */}
+            <stop offset="0%" stopColor="#101522" />
+            <stop offset="50%" stopColor="#20375f" />
+            <stop offset="100%" stopColor="#4870d0" />
           </linearGradient>
         </defs>
       )}

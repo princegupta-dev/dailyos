@@ -169,7 +169,7 @@
   overflow: hidden;
   padding: var(--space-5);
   border-radius: calc(var(--radius-lg) + 6px);
-  background: var(--gradient-dusk);
+  background: var(--gradient-secondary-dark);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-lg);
   animation: rise-in var(--duration-slow) var(--ease-out);
@@ -301,7 +301,7 @@
   padding: var(--space-3) var(--space-4) var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: var(--gradient-glow), var(--color-surface);
+  background: var(--gradient-light), var(--color-surface);
   box-shadow: var(--shadow-sm);
   animation: rise-in var(--duration-slow) var(--ease-out) both;
   transition:
@@ -377,7 +377,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   transition: inline-size var(--duration-slow) var(--ease-out);
 }
 
@@ -468,7 +468,7 @@
 }
 
 .trend__bar--habits {
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
 }
 
 .trend__bar--plan {
@@ -515,7 +515,7 @@
 }
 
 .trend__key--habits {
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
 }
 
 .trend__key--plan {
@@ -690,7 +690,7 @@
 }
 
 .habit-bars__track > .habit-bars__fill--strong {
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
 }
 
 .habit-bars__track > .habit-bars__fill--care {
@@ -757,7 +757,7 @@
 }
 
 .weekday-chart__day--best .weekday-chart__track > span {
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   opacity: 1;
   box-shadow: var(--shadow-primary);
 }
@@ -900,7 +900,7 @@
 
 .badge--earned {
   border: 1px solid var(--color-primary-soft);
-  background: var(--gradient-glow), var(--color-surface);
+  background: var(--gradient-light), var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -911,13 +911,13 @@
   width: 36px;
   height: 36px;
   margin-bottom: 4px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-round);
   background: var(--color-surface-sunken);
   color: var(--color-subtle);
 }
 
 .badge--earned .badge__medal {
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-primary);
 }
@@ -1004,7 +1004,7 @@
 }
 
 .task-insight__segment--done {
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
 }
 
 .task-insight__segment--notDone {
@@ -1173,7 +1173,7 @@
   padding: var(--space-7) var(--space-5);
   border: 1px dashed var(--color-border-strong);
   border-radius: calc(var(--radius-lg) + 6px);
-  background: var(--gradient-glow), var(--color-surface);
+  background: var(--gradient-light), var(--color-surface);
   text-align: center;
   animation: rise-in var(--duration-slow) var(--ease-out);
 }
@@ -1186,7 +1186,7 @@
   height: 72px;
   margin-bottom: var(--space-2);
   border-radius: var(--radius-pill);
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
   box-shadow:
     0 0 0 8px var(--color-primary-soft),

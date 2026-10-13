@@ -36,6 +36,10 @@ export interface SettingsPatch {
   lastBackupAt?: string;
   /** Empty or `null` removes the name. */
   displayName?: string | null;
+  /** `null` returns to the default (six months). */
+  emergencyFundMonths?: number | null;
+  /** `null` clears the default account. */
+  defaultAccountId?: string | null;
 }
 
 export async function updateSettings(patch: SettingsPatch): Promise<Settings> {
@@ -50,8 +54,14 @@ export async function updateSettings(patch: SettingsPatch): Promise<Settings> {
       issues: [{ path: 'displayName', message: 'Use 40 characters or fewer' }],
     });
   }
+  const months = patch.emergencyFundMonths;
+  if (typeof months === 'number' && (!Number.isInteger(months) || months < 1 || months > 24)) {
+    throw new AppError('validation', 'Choose 1 to 24 months', {
+      issues: [{ path: 'emergencyFundMonths', message: 'Choose 1 to 24 months' }],
+    });
+  }
   try {
-    return await db.transaction('rw', db.settings, async () => {
+    return await db.transaction('rw', db.settings, db.accounts, async () => {
       const current = await getSettings();
       const next: Settings = { ...current, updatedAt: new Date().toISOString() };
       if (patch.timeZone === null) delete next.timeZone;
@@ -60,6 +70,17 @@ export async function updateSettings(patch: SettingsPatch): Promise<Settings> {
       if (patch.lastBackupAt !== undefined) next.lastBackupAt = patch.lastBackupAt;
       if (patch.displayName === null || name === '') delete next.displayName;
       else if (name !== undefined) next.displayName = name;
+      if (months === null) delete next.emergencyFundMonths;
+      else if (months !== undefined) next.emergencyFundMonths = months;
+      if (patch.defaultAccountId === null) delete next.defaultAccountId;
+      else if (patch.defaultAccountId !== undefined) {
+        if (!(await db.accounts.get(patch.defaultAccountId))) {
+          throw new AppError('validation', 'That account no longer exists.', {
+            issues: [{ path: 'defaultAccountId', message: 'That account no longer exists' }],
+          });
+        }
+        next.defaultAccountId = patch.defaultAccountId;
+      }
       await db.settings.put(next);
       return next;
     });

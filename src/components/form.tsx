@@ -84,12 +84,33 @@ export function TextAreaField({ label, error, hint, rows = 3, ...textarea }: Tex
   );
 }
 
+export interface SelectOption {
+  value: string;
+  label: string;
+  /** Options sharing a group are shown together under its name (an <optgroup>). */
+  group?: string | undefined;
+}
+
 type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> & {
   label: string;
   error?: string | undefined;
   hint?: string | undefined;
-  options: readonly { value: string; label: string }[];
+  options: readonly SelectOption[];
 };
+
+/** Consecutive options with the same group, in order. Ungrouped options stand alone. */
+function groupOptions(options: readonly SelectOption[]) {
+  const runs: { group: string | undefined; options: SelectOption[] }[] = [];
+  for (const option of options) {
+    const last = runs.at(-1);
+    if (last && option.group !== undefined && last.group === option.group) {
+      last.options.push(option);
+    } else {
+      runs.push({ group: option.group, options: [option] });
+    }
+  }
+  return runs;
+}
 
 export function SelectField({ label, error, hint, options, ...select }: SelectFieldProps) {
   return (
@@ -102,11 +123,23 @@ export function SelectField({ label, error, hint, options, ...select }: SelectFi
           aria-describedby={describedBy}
           {...select}
         >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {groupOptions(options).map((run, index) =>
+            run.group === undefined ? (
+              run.options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))
+            ) : (
+              <optgroup key={`${run.group}-${index}`} label={run.group}>
+                {run.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            ),
+          )}
         </select>
       )}
     </FieldShell>

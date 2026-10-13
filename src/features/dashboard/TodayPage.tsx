@@ -4,20 +4,18 @@ import { Link } from 'react-router';
 import { Section } from '@/components/Section';
 import { useToday } from '@/hooks/useToday';
 import { HabitDayList } from '../habits/HabitDayList';
-import { DailyIntention } from '../planning/DailyIntention';
+import { DailyIntention, DailyPriorities } from '../planning/DailyIntention';
 import { TodayTasks } from '../planning/TodayTasks';
 import { EveningReview } from '../reviews/EveningReview';
+import { MoneySnapshot } from './MoneySnapshot';
 import { QuickCaptureDialog } from './QuickCaptureDialog';
 import { TodayHeader } from './TodayHeader';
-import { TodayProgress } from './TodayProgress';
+import { TodayOverview } from './TodayOverview';
 
 /**
- * The daily command center: date, progress, habits, focus, tasks, and the evening review.
+ * The daily command center, one column top to bottom: an overview, habits, money,
+ * priorities, tasks, intention, and the evening review.
  * Kept deliberately short so planning takes a couple of minutes.
- *
- * On wide screens the doing (habits, tasks) sits in a main column beside the overview and
- * reflection (progress, intention, evening review). On narrow screens both columns dissolve
- * into one list, ordered for a morning check-in (see `.today__block` in today.css).
  */
 export function TodayPage() {
   const today = useToday();
@@ -33,33 +31,27 @@ export function TodayPage() {
         }}
       />
 
-      <div className="today__grid">
-        <div className="today__main">
-          <div className="today__block today__block--habits">
-            <Section
-              title="Habits"
-              icon={Repeat}
-              description="Small, steady wins"
-              meta={<Link to="/habits">All habits</Link>}
-            >
-              <HabitDayList date={today} today={today} />
-            </Section>
-          </div>
-          <div className="today__block today__block--tasks">
-            <TodayTasks today={today} />
-          </div>
+      <div className="today__stack">
+        <TodayOverview today={today} />
+        <div className="today__block today__block--habits">
+          <Section title="Habits" icon={Repeat} meta={<Link to="/habits">All habits</Link>}>
+            <HabitDayList date={today} today={today} />
+          </Section>
         </div>
-
-        <div className="today__side">
-          <div className="today__block today__block--progress">
-            <TodayProgress today={today} />
-          </div>
-          <div className="today__block today__block--intention">
-            <DailyIntention date={today} />
-          </div>
-          <div className="today__block today__block--review">
-            <EveningReview today={today} />
-          </div>
+        <div className="today__block today__block--money">
+          <MoneySnapshot today={today} />
+        </div>
+        <div className="today__block today__block--priorities">
+          <DailyPriorities date={today} />
+        </div>
+        <div className="today__block today__block--tasks">
+          <TodayTasks today={today} />
+        </div>
+        <div className="today__block today__block--intention">
+          <DailyIntention date={today} />
+        </div>
+        <div className="today__block today__block--review">
+          <EveningReview today={today} />
         </div>
       </div>
 

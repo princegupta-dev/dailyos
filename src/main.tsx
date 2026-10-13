@@ -12,6 +12,7 @@ import './styles/reviews.css';
 import './styles/settings.css';
 import './styles/learning.css';
 import './styles/insights.css';
+import './styles/finance.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

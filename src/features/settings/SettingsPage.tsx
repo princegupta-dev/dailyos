@@ -7,17 +7,21 @@ import {
   Info,
   Plus,
   Repeat,
+  Wallet,
   WifiOff,
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { Section } from '@/components/Section';
 import { DataSettings } from './DataSettings';
+import { MoneyDataSettings } from './MoneyDataSettings';
+import { MoneySettings } from './MoneySettings';
 import { DateTimeSettings } from './DateTimeSettings';
 import { ProfileCard } from './ProfileCard';
 import { SettingsCard, SettingsLinkRow, SettingsRow } from './SettingsRow';
 
 const JUMPS = [
   { id: 'settings-habits', label: 'Habits' },
+  { id: 'settings-money', label: 'Money' },
   { id: 'settings-time', label: 'Date & time' },
   { id: 'settings-data', label: 'Data & privacy' },
   { id: 'settings-about', label: 'About' },
@@ -82,12 +86,18 @@ export function SettingsPage() {
         </Section>
       </div>
 
+      <div id="settings-money" className="settings-anchor">
+        <MoneySettings icon={Wallet} />
+      </div>
+
       <div id="settings-time" className="settings-anchor">
         <DateTimeSettings icon={Clock} />
       </div>
 
       <div id="settings-data" className="settings-anchor">
         <DataSettings icon={Database} />
+
+        <MoneyDataSettings />
       </div>
 
       <div id="settings-about" className="settings-anchor">

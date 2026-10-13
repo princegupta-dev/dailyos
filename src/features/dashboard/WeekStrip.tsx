@@ -1,82 +1,52 @@
-import { CalendarRange } from 'lucide-react';
-import { useCallback } from 'react';
-import { getHabitsForDay } from '@/db/repositories/habits';
-import { useLiveData } from '@/hooks/useLiveData';
 import { addDays, formatDateKey, startOfWeek } from '@/lib/dates';
 
-interface DayTally {
+export interface WeekDay {
   date: string;
-  done: number;
-  counted: number;
+  /** Column fill, 0 to 1. */
+  fraction: number;
+  /** Spoken and hover description for the day, e.g. "Monday: 2 of 3 habits". */
+  description: string;
+  full?: boolean;
 }
 
-/**
- * Habit completion for each day of this week so far. Weekly habits are left out: they span
- * the whole week, so counting them per day would repeat them seven times. Skipped habits
- * don't count, as everywhere else.
- */
-async function loadWeek(today: string, weekStartsOn: 0 | 1): Promise<DayTally[]> {
-  const start = startOfWeek(today, weekStartsOn);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i)).filter((d) => d <= today);
-  return Promise.all(
-    days.map(async (date) => {
-      const habits = (await getHabitsForDay(date, today, weekStartsOn)).filter(
-        (h) => h.habit.frequency !== 'weekly' && h.occurrence.status !== 'skipped',
-      );
-      return {
-        date,
-        done: habits.filter((h) => h.occurrence.status === 'completed').length,
-        counted: habits.length,
-      };
-    }),
-  );
+interface WeekStripProps {
+  today: string;
+  weekStartsOn: 0 | 1;
+  /** Days up to today; later days render as empty, still-ahead columns. */
+  days: readonly WeekDay[];
+  label: string;
+  tone?: 'primary' | 'warm';
 }
 
-/** Seven small columns, Monday (or Sunday) to Sunday, filled by each day's habit share. */
-export function WeekStrip({ today, weekStartsOn }: { today: string; weekStartsOn: 0 | 1 }) {
-  const week = useLiveData(useCallback(() => loadWeek(today, weekStartsOn), [today, weekStartsOn]));
-  if (week.status !== 'ready') return null;
-  // Nothing to show until at least one day has a scheduled daily habit.
-  if (week.data.every((d) => d.counted === 0)) return null;
-
+/** Seven small columns, Monday (or Sunday) to Sunday, each filled by its day's share. */
+export function WeekStrip({ today, weekStartsOn, days, label, tone = 'primary' }: WeekStripProps) {
   const start = startOfWeek(today, weekStartsOn);
-  const byDate = new Map(week.data.map((d) => [d.date, d]));
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  const week = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
   return (
-    <div className="progress-hero__week">
-      <p className="progress-hero__week-title" aria-hidden="true">
-        <CalendarRange size={14} />
-        This week
-      </p>
-      <ol className="week-strip" aria-label="Habits this week, day by day">
-        {days.map((date) => {
-          const tally = byDate.get(date);
-          const future = date > today;
-          const fraction = tally && tally.counted > 0 ? tally.done / tally.counted : 0;
-          const full = tally !== undefined && tally.counted > 0 && tally.done === tally.counted;
-          const label = formatDateKey(date, undefined, { weekday: 'long' });
-          const description = future
-            ? `${label}: still ahead`
-            : tally && tally.counted > 0
-              ? `${label}: ${tally.done} of ${tally.counted} habits`
-              : `${label}: no habits scheduled`;
-          return (
-            <li
-              key={date}
-              className={`week-strip__day${date === today ? ' week-strip__day--today' : ''}${future ? ' week-strip__day--future' : ''}${full ? ' week-strip__day--full' : ''}`}
-              aria-label={description}
-            >
-              <span className="week-strip__bar" aria-hidden="true">
-                <span style={{ blockSize: `${Math.round(fraction * 100)}%` }} />
-              </span>
-              <span className="week-strip__label" aria-hidden="true">
-                {formatDateKey(date, undefined, { weekday: 'narrow' })}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+    <ol className={`week-strip week-strip--${tone}`} aria-label={label}>
+      {week.map((date) => {
+        const day = byDate.get(date);
+        const future = date > today;
+        const description =
+          day?.description ?? `${formatDateKey(date, undefined, { weekday: 'long' })}: still ahead`;
+        return (
+          <li
+            key={date}
+            className={`week-strip__day${date === today ? ' week-strip__day--today' : ''}${future ? ' week-strip__day--future' : ''}${day?.full ? ' week-strip__day--full' : ''}`}
+            aria-label={description}
+            title={description}
+          >
+            <span className="week-strip__bar" aria-hidden="true">
+              <span style={{ blockSize: `${Math.round((day?.fraction ?? 0) * 100)}%` }} />
+            </span>
+            <span className="week-strip__label" aria-hidden="true">
+              {formatDateKey(date, undefined, { weekday: 'narrow' })}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

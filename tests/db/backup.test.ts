@@ -6,6 +6,15 @@ import {
   readBackupText,
   restoreBackup,
 } from '@/db/repositories/backup';
+import {
+  createFinanceCategory,
+  createFinanceEntry,
+  createFinanceGoal,
+  createAccount,
+  createRecurring,
+  createSalaryRecord,
+  saveBudget,
+} from '@/db/repositories/finance';
 import { createHabit, setHabitStatus } from '@/db/repositories/habits';
 import { createLearningEntry } from '@/db/repositories/learning';
 import { planTask, updatePlanDetails } from '@/db/repositories/plans';
@@ -50,6 +59,39 @@ async function seed(prefix = '') {
   });
   await saveItemReflection({ type: 'task', id: task.id }, TODAY, {
     gotInTheWay: `${prefix}Meetings`,
+  });
+  const pets = await createFinanceCategory({ kind: 'expense', name: `${prefix}Pets` });
+  const fund = await createAccount({
+    name: `${prefix}Index fund`,
+    type: 'mutual_fund',
+    balance: 0,
+  });
+  const bank = await createAccount({ name: `${prefix}Bank`, type: 'bank_savings', balance: 0 });
+  await createFinanceEntry({
+    kind: 'expense',
+    amount: 500,
+    date: TODAY,
+    category: pets.id,
+    accountId: bank.id,
+  });
+  await createFinanceEntry({
+    kind: 'investment',
+    amount: 1_000,
+    date: TODAY,
+    category: 'mutual_fund',
+    accountId: bank.id,
+    toAccountId: fund.id,
+  });
+  await createRecurring({
+    entry: { kind: 'expense', amount: 300, date: TODAY, category: 'ott', accountId: bank.id },
+    frequency: 'monthly',
+  });
+  await createFinanceGoal({ name: `${prefix}Save`, kind: 'savings', year: 2026, target: 10_000 });
+  await saveBudget({ period: 'monthly', category: prefix ? 'group:food' : 'all', limit: 5_000 });
+  await createSalaryRecord({
+    effectiveFrom: prefix ? '2026-09-01' : '2026-04-01',
+    monthlyGross: 10_000,
+    monthlyInHand: 8_000,
   });
   return { task, habit };
 }
@@ -255,5 +297,65 @@ describe('checking a backup file', () => {
       expect(check.backup.data.habitEntries[0]?.tags).toEqual([]);
       expect(check.backup.data.learningEntries).toEqual([]);
     }
+  });
+
+  it('upgrades a backup made when investments were holdings', async () => {
+    await seed();
+    const file = await valid();
+    const holdingId = '88888888-8888-4888-8888-888888888888';
+    const v7 = {
+      ...file,
+      schemaVersion: 7,
+      data: {
+        ...file.data,
+        accounts: undefined,
+        recurringRules: undefined,
+        financeEntries: [
+          {
+            id: '99999999-9999-4999-8999-999999999999',
+            kind: 'investment',
+            amount: 2_000_00,
+            date: TODAY,
+            category: 'gold',
+            holdingId,
+            createdAt: file.exportedAt,
+            updatedAt: file.exportedAt,
+          },
+          {
+            id: '99999999-9999-4999-8999-999999999998',
+            kind: 'expense',
+            amount: 100_00,
+            date: TODAY,
+            category: 'food',
+            createdAt: file.exportedAt,
+            updatedAt: file.exportedAt,
+          },
+        ],
+        holdings: [
+          {
+            id: holdingId,
+            name: 'Gold',
+            type: 'gold',
+            createdAt: file.exportedAt,
+            updatedAt: file.exportedAt,
+          },
+        ],
+      },
+    };
+
+    const check = readBackupText(JSON.stringify(v7));
+    expect(check.ok).toBe(true);
+    if (!check.ok) return;
+    expect(check.backup.data.accounts).toEqual([
+      expect.objectContaining({ id: holdingId, type: 'gold_digital', balance: 0 }),
+    ]);
+    expect(check.backup.data.financeEntries.map((e) => [e.category, e.toAccountId])).toEqual([
+      ['gold_digital', holdingId],
+      ['dining_out', undefined],
+    ]);
+
+    await resetDatabase('UTC');
+    await restoreBackup(check.backup, 'replace');
+    expect(await db.accounts.count()).toBe(1);
   });
 });

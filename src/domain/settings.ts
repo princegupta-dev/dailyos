@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { timestampSchema } from '@/lib/validation';
+import { idSchema, timestampSchema } from '@/lib/validation';
 
 export const SETTINGS_ID = 'app';
 
@@ -12,6 +12,10 @@ export const settingsSchema = z.object({
   lastBackupAt: timestampSchema.optional(),
   /** How the app greets you, e.g. on Today. Absent means no name is used. */
   displayName: z.string().trim().min(1).max(40).optional(),
+  /** Months of expenses an emergency fund should cover. Absent means the usual six. */
+  emergencyFundMonths: z.number().int().min(1).max(24).optional(),
+  /** Account pre-selected when recording money. Absent means none. */
+  defaultAccountId: idSchema.optional(),
   updatedAt: timestampSchema,
 });
 export type Settings = z.infer<typeof settingsSchema>;

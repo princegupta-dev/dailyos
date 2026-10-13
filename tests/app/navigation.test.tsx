@@ -9,12 +9,18 @@ beforeEach(async () => {
 });
 
 describe('app navigation', () => {
-  it('shows the four primary destinations with Today active by default', () => {
+  it('shows the five primary destinations with Today active by default', () => {
     renderAt('/');
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     const links = within(nav).getAllByRole('link');
 
-    expect(links.map((l) => l.textContent)).toEqual(['Today', 'Habits', 'Insights', 'Review']);
+    expect(links.map((l) => l.textContent)).toEqual([
+      'Today',
+      'Habits',
+      'Investments',
+      'Insights',
+      'Review',
+    ]);
     expect(within(nav).getByRole('link', { name: 'Today' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -97,7 +103,7 @@ describe('Today', () => {
       expect(screen.getByRole('region', { name })).toBeInTheDocument();
     }
     expect(screen.queryByRole('region', { name: 'Recent learning' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Capture a note or task' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Capture a note, task, or expense' })).toBeEnabled();
     // Each section loads independently, so wait for Tasks too.
     expect(await screen.findByRole('link', { name: 'All tasks' })).toHaveAttribute(
       'href',

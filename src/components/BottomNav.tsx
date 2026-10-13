@@ -3,6 +3,7 @@ import {
   CircleCheckBig,
   House,
   NotebookPen,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
@@ -16,12 +17,14 @@ interface NavItem {
 }
 
 /**
- * Four primary destinations. Secondary screens keep their parent highlighted: Tasks is
+ * Five primary destinations. The two trackers, Habits and Investments (the Expense Tracker),
+ * sit side by side next to Today; Insights and Review work across both. Secondary screens keep their parent highlighted: Tasks is
  * reached from Today, Learn from Insights, Settings from Today.
  */
 const NAV_ITEMS: readonly NavItem[] = [
   { to: '/', label: 'Today', icon: House, matches: ['/tasks', '/settings'] },
   { to: '/habits', label: 'Habits', icon: CircleCheckBig, matches: ['/habits'] },
+  { to: '/investments', label: 'Investments', icon: Wallet, matches: ['/investments'] },
   { to: '/insights', label: 'Insights', icon: ChartNoAxesColumn, matches: ['/insights', '/learn'] },
   { to: '/review', label: 'Review', icon: NotebookPen, matches: ['/review'] },
 ];

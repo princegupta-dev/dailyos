@@ -1,4 +1,12 @@
 import type { Transaction } from 'dexie';
+import type { Account, FinanceEntry } from '@/domain/finance';
+import {
+  holdingToAccount,
+  upgradeEntry,
+  upgradeExpenseCategory,
+  type LegacyEntry,
+  type LegacyHolding,
+} from '@/domain/financeMigration';
 
 export interface SchemaVersion {
   version: number;
@@ -83,6 +91,50 @@ export const SCHEMA_VERSIONS: readonly SchemaVersion[] = [
       // Unique compound index: one reflection per habit or task per date.
       itemReflections: 'id, &[subjectType+subjectId+date], date',
     },
+  },
+  {
+    // Personal finance: money movements, investment holdings, yearly goals, budgets, salary
+    // history, and custom categories. New stores only.
+    version: 7,
+    stores: {
+      financeEntries: 'id, date, kind, holdingId',
+      holdings: 'id, type',
+      financeGoals: 'id, year',
+      // Unique compound index: one budget per period and category.
+      budgets: 'id, &[period+category]',
+      // Unique: one salary revision per start date.
+      salaryRecords: 'id, &effectiveFrom',
+      financeCategories: 'id, kind',
+    },
+  },
+  {
+    // Accounts & assets replace holdings; entries link to accounts; expense categories gain
+    // groups; recurring payments. Holdings become investment accounts with the same ids, so
+    // nothing is lost (see domain/financeMigration.ts). The old store is dropped in v9.
+    version: 8,
+    stores: {
+      accounts: 'id, type',
+      recurringRules: 'id, nextDue',
+      financeEntries: 'id, date, kind, accountId, toAccountId, recurringId',
+    },
+    upgrade: async (tx) => {
+      const holdings = await tx.table<LegacyHolding>('holdings').toArray();
+      const entries = await tx.table<LegacyEntry>('financeEntries').toArray();
+      await tx
+        .table<Account>('accounts')
+        .bulkAdd(holdings.map((h) => holdingToAccount(h, entries)));
+      await tx.table<FinanceEntry>('financeEntries').bulkPut(entries.map(upgradeEntry));
+      await tx
+        .table<{ category: string }>('budgets')
+        .toCollection()
+        .modify((budget) => {
+          budget.category = upgradeExpenseCategory(budget.category);
+        });
+    },
+  },
+  {
+    version: 9,
+    stores: { holdings: null },
   },
 ];
 

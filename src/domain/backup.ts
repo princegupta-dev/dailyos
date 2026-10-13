@@ -1,5 +1,21 @@
 import { z } from 'zod';
 import { timestampSchema, toValidationIssues, type ValidationIssue } from '@/lib/validation';
+import {
+  accountSchema,
+  budgetSchema,
+  financeCategorySchema,
+  financeEntrySchema,
+  financeGoalSchema,
+  recurringRuleSchema,
+  salaryRecordSchema,
+} from './finance';
+import {
+  holdingToAccount,
+  upgradeEntry,
+  upgradeExpenseCategory,
+  type LegacyEntry,
+  type LegacyHolding,
+} from './financeMigration';
 import { habitEntrySchema, habitSchema } from './habit';
 import { learningEntrySchema } from './learning';
 import { dailyPlanSchema, planItemSchema } from './plan';
@@ -23,6 +39,13 @@ export const BACKUP_TABLES = [
   'reviews',
   'reviewActions',
   'itemReflections',
+  'financeCategories',
+  'accounts',
+  'financeEntries',
+  'financeGoals',
+  'budgets',
+  'salaryRecords',
+  'recurringRules',
 ] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
@@ -38,6 +61,13 @@ export const BACKUP_TABLE_LABELS: Record<BackupTable, string> = {
   reviews: 'Reviews',
   reviewActions: 'Review actions',
   itemReflections: 'Habit and task reflections',
+  financeCategories: 'Custom money categories',
+  accounts: 'Accounts & assets',
+  financeEntries: 'Money transactions',
+  financeGoals: 'Financial goals',
+  budgets: 'Budgets',
+  salaryRecords: 'Salary history',
+  recurringRules: 'Recurring payments',
 };
 
 /** Tables can be missing from older backups (written before they existed); they default to empty. */
@@ -53,6 +83,13 @@ const backupDataSchema = z.object({
   reviews: z.array(reviewSchema).default([]),
   reviewActions: z.array(reviewActionSchema).default([]),
   itemReflections: z.array(itemReflectionSchema).default([]),
+  financeCategories: z.array(financeCategorySchema).default([]),
+  accounts: z.array(accountSchema).default([]),
+  financeEntries: z.array(financeEntrySchema).default([]),
+  financeGoals: z.array(financeGoalSchema).default([]),
+  budgets: z.array(budgetSchema).default([]),
+  salaryRecords: z.array(salaryRecordSchema).default([]),
+  recurringRules: z.array(recurringRuleSchema).default([]),
 });
 export type BackupData = z.output<typeof backupDataSchema>;
 
@@ -93,21 +130,56 @@ function fail(message: string, issues: ValidationIssue[] = []): BackupCheck {
  * database migrations (see db/schema.ts). Works on a copy; the input is never modified.
  */
 function upgradeData(data: Record<string, unknown>, fromVersion: number): Record<string, unknown> {
-  if (fromVersion >= 5) return data;
-  // v5 added habit categories and tags on check-ins and notes, with these defaults.
-  const withDefaults = (table: string, defaults: Record<string, unknown>) => {
-    const rows: unknown = data[table];
-    if (!Array.isArray(rows)) return rows;
-    return rows.map((row: unknown) =>
-      typeof row === 'object' && row !== null ? { ...defaults, ...row } : row,
-    );
-  };
-  return {
-    ...data,
-    habits: withDefaults('habits', { category: 'other' }),
-    habitEntries: withDefaults('habitEntries', { tags: [] }),
-    learningEntries: withDefaults('learningEntries', { tags: [] }),
-  };
+  let upgraded = data;
+  if (fromVersion < 5) {
+    // v5 added habit categories and tags on check-ins and notes, with these defaults.
+    const withDefaults = (table: string, defaults: Record<string, unknown>) => {
+      const rows: unknown = upgraded[table];
+      if (!Array.isArray(rows)) return rows;
+      return rows.map((row: unknown) =>
+        typeof row === 'object' && row !== null ? { ...defaults, ...row } : row,
+      );
+    };
+    upgraded = {
+      ...upgraded,
+      habits: withDefaults('habits', { category: 'other' }),
+      habitEntries: withDefaults('habitEntries', { tags: [] }),
+      learningEntries: withDefaults('learningEntries', { tags: [] }),
+    };
+  }
+  if (fromVersion < 8) {
+    // v8 turned holdings into accounts and regrouped expense categories. Rows that aren't
+    // objects are left for validation to reject.
+    const rows = (table: string) => {
+      const value: unknown = upgraded[table];
+      return Array.isArray(value) ? (value as unknown[]) : [];
+    };
+    const isObject = (row: unknown): row is Record<string, unknown> =>
+      typeof row === 'object' && row !== null;
+    const entries = rows('financeEntries');
+    const legacyEntries = entries.filter(isObject) as unknown as LegacyEntry[];
+    const rest = { ...upgraded };
+    delete rest.holdings;
+    upgraded = {
+      ...rest,
+      // Holdings join any accounts already in the file.
+      accounts: [
+        ...rows('accounts'),
+        ...rows('holdings').map((h) =>
+          isObject(h) ? holdingToAccount(h as unknown as LegacyHolding, legacyEntries) : h,
+        ),
+      ],
+      financeEntries: entries.map((e) =>
+        isObject(e) ? upgradeEntry(e as unknown as LegacyEntry) : e,
+      ),
+      budgets: rows('budgets').map((b) =>
+        isObject(b) && typeof b.category === 'string'
+          ? { ...b, category: upgradeExpenseCategory(b.category) }
+          : b,
+      ),
+    };
+  }
+  return upgraded;
 }
 
 /** Duplicate ids, duplicate natural keys, and references to records missing from the backup. */
@@ -143,6 +215,13 @@ function integrityIssues(data: BackupData): ValidationIssue[] {
     (r) => `${r.periodType}|${r.periodStart}`,
     'review for the same period',
   );
+  unique(
+    'budgets',
+    data.budgets,
+    (b) => `${b.period}|${b.category}`,
+    'budget for the same period and category',
+  );
+  unique('salaryRecords', data.salaryRecords, (s) => s.effectiveFrom, 'salary start date');
 
   const ids = (table: BackupTable) =>
     new Set((data[table] as readonly { id: string }[]).map((r) => r.id));
@@ -177,6 +256,13 @@ function integrityIssues(data: BackupData): ValidationIssue[] {
     ids('reviews'),
     'review',
   );
+  const accounts = ids('accounts');
+  for (const table of ['financeEntries', 'recurringRules'] as const) {
+    const rows: readonly { accountId?: string | undefined; toAccountId?: string | undefined }[] =
+      data[table];
+    refs(table, rows, 'accountId', (r) => r.accountId, accounts, 'account');
+    refs(table, rows, 'toAccountId', (r) => r.toAccountId, accounts, 'account');
+  }
   return issues;
 }
 

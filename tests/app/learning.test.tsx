@@ -17,7 +17,9 @@ describe('learning capture', () => {
   it('quick capture saves a one-line note that appears in Insights', async () => {
     const user = userEvent.setup();
     renderApp('/');
-    await user.click(await screen.findByRole('button', { name: 'Capture a note or task' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Capture a note, task, or expense' }),
+    );
     const dialog = screen.getByRole('dialog', { name: 'Quick capture' });
     expect(within(dialog).getByRole('button', { name: 'Note' })).toHaveAttribute(
       'aria-pressed',

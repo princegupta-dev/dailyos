@@ -6,6 +6,7 @@ import {
   Plus,
   Repeat2,
   Trophy,
+  Wallet,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -26,6 +27,12 @@ interface DraftAction {
   status: ReviewActionStatus;
   targetDate: string;
 }
+
+const MONEY_PROMPTS = {
+  daily: 'Money today: a spending decision you’d repeat, or rethink?',
+  weekly: 'Money this week: spending decisions and savings progress',
+  monthly: 'Money this month: what went well, and what to change',
+} as const;
 
 const PROMPTS = {
   daily: {
@@ -55,7 +62,7 @@ function Prompt({
   children,
 }: {
   icon: LucideIcon;
-  tone: 'well' | 'way' | 'learn' | 'change';
+  tone: 'well' | 'way' | 'learn' | 'change' | 'money';
   children: ReactNode;
 }) {
   return (
@@ -80,6 +87,7 @@ export function ReviewForm({ period, existing }: { period: Period; existing: Rev
   const [lessons, setLessons] = useState(review?.lessons ?? '');
   const [improvements, setImprovements] = useState(review?.improvements ?? '');
   const [focus, setFocus] = useState(review?.focus ?? '');
+  const [money, setMoney] = useState(review?.moneyReflection ?? '');
   const [actions, setActions] = useState<DraftAction[]>(() =>
     existing.actions.map((a) => ({
       key: a.id,
@@ -110,6 +118,7 @@ export function ReviewForm({ period, existing }: { period: Period; existing: Rev
         improvements,
         focus,
         rating,
+        moneyReflection: money,
         actions: actions.map((a) => ({
           id: a.id,
           title: a.title,
@@ -191,6 +200,18 @@ export function ReviewForm({ period, existing }: { period: Period; existing: Rev
           />
         </Prompt>
       )}
+      <Prompt icon={Wallet} tone="money">
+        <TextAreaField
+          label={MONEY_PROMPTS[period.type]}
+          hint="Optional. Your money report is above."
+          rows={2}
+          value={money}
+          onChange={(e) => {
+            setMoney(e.target.value);
+          }}
+          error={errors.moneyReflection}
+        />
+      </Prompt>
       <div className="focus-field">
         <span className="focus-field__icon" aria-hidden="true">
           <Compass size={18} />

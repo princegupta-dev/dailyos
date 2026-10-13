@@ -70,9 +70,9 @@ export function TodayHeader({ today, onCapture }: TodayHeaderProps) {
           <button
             type="button"
             className="today-header__capture"
-            aria-label="Capture a note or task"
+            aria-label="Capture a note, task, or expense"
             aria-keyshortcuts="C"
-            title="Capture a note or task (C)"
+            title="Capture a note, task, or expense (C)"
             onClick={onCapture}
           >
             <PenLine size={18} aria-hidden="true" />

@@ -33,6 +33,8 @@ export const reviewSchema = z.object({
   distractionTrigger: optionalText(2000),
   /** The smallest useful thing to do tomorrow if the day is hard. */
   minimumPlan: optionalText(1000),
+  /** Spending decisions and progress toward savings goals in this period. */
+  moneyReflection: optionalText(5000),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 });
@@ -72,6 +74,7 @@ export const reviewDraftSchema = z.object({
   selfInsight: optionalText(5000),
   distractionTrigger: optionalText(2000),
   minimumPlan: optionalText(1000),
+  moneyReflection: optionalText(5000),
   actions: z
     .array(
       z.object({

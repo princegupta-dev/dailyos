@@ -1,4 +1,4 @@
-import { CalendarClock, ClipboardList, Hourglass, ListChecks, Plus } from 'lucide-react';
+import { CalendarClock, ClipboardList, ListChecks, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -26,15 +26,13 @@ export function TodayTasks({ today }: { today: string }) {
   const minutesLeft = counted
     .filter((e) => e.outcome !== 'done' && e.outcome !== 'not_done')
     .reduce((sum, e) => sum + (e.task.estimatedMinutes ?? 0), 0);
-  const allTasksDone = counted.length > 0 && doneCount === counted.length;
+  const meta =
+    counted.length === 0
+      ? undefined
+      : `${doneCount} of ${counted.length} done${minutesLeft > 0 ? ` · ${formatMinutes(minutesLeft)} left` : ''}`;
 
   return (
-    <Section
-      title="Tasks"
-      icon={ListChecks}
-      description="What you planned for today"
-      meta={counted.length > 0 ? `${doneCount} of ${counted.length} done` : undefined}
-    >
+    <Section title="Tasks" icon={ListChecks} className="section--tasks" meta={meta}>
       <LiveView
         state={dayPlan}
         loadingLabel="Loading tasks…"
@@ -45,28 +43,6 @@ export function TodayTasks({ today }: { today: string }) {
           const moved = entries.filter((e) => e.outcome === 'rescheduled');
           return (
             <>
-              {counted.length > 0 && (
-                <div className="task-progress">
-                  <progress
-                    className="progress"
-                    max={counted.length}
-                    value={doneCount}
-                    aria-label={`${doneCount} of ${counted.length} planned tasks done`}
-                  />
-                  {allTasksDone ? (
-                    <p className="task-progress__note task-progress__note--done">
-                      Every planned task is done. <em>Nicely cleared.</em>
-                    </p>
-                  ) : (
-                    minutesLeft > 0 && (
-                      <p className="task-progress__note">
-                        <Hourglass size={13} aria-hidden="true" />
-                        About {formatMinutes(minutesLeft)} of planned work left
-                      </p>
-                    )
-                  )}
-                </div>
-              )}
               {current.length === 0 ? (
                 <EmptyState
                   icon={ClipboardList}

@@ -1,4 +1,13 @@
 import Dexie, { type Table } from 'dexie';
+import type {
+  Account,
+  Budget,
+  FinanceCategory,
+  FinanceEntry,
+  FinanceGoal,
+  RecurringRule,
+  SalaryRecord,
+} from '@/domain/finance';
 import type { Habit, HabitEntry } from '@/domain/habit';
 import type { LearningEntry } from '@/domain/learning';
 import type { DailyPlan, PlanItem } from '@/domain/plan';
@@ -23,6 +32,13 @@ export class DailyOSDatabase extends Dexie {
   reviews!: Table<Review, string>;
   reviewActions!: Table<ReviewAction, string>;
   itemReflections!: Table<ItemReflection, string>;
+  financeEntries!: Table<FinanceEntry, string>;
+  accounts!: Table<Account, string>;
+  recurringRules!: Table<RecurringRule, string>;
+  financeGoals!: Table<FinanceGoal, string>;
+  budgets!: Table<Budget, string>;
+  salaryRecords!: Table<SalaryRecord, string>;
+  financeCategories!: Table<FinanceCategory, string>;
 
   constructor(name = DATABASE_NAME, versions: readonly SchemaVersion[] = SCHEMA_VERSIONS) {
     super(name);

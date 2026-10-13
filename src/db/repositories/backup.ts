@@ -69,19 +69,22 @@ export interface MergePlan {
 async function planMerge(data: BackupData): Promise<MergePlan> {
   const has = async (table: string) =>
     new Set((await db.table(table).toCollection().primaryKeys()) as string[]);
-  const [localIds, planDates, entryKeys, reviewKeys, reflectionKeys] = await Promise.all([
-    Promise.all(BACKUP_TABLES.map(async (t) => [t, await has(t)] as const)).then(
-      (pairs) => new Map(pairs),
-    ),
-    db.dailyPlans.toArray().then((rows) => new Set(rows.map((p) => p.date))),
-    db.habitEntries.toArray().then((rows) => new Set(rows.map((e) => `${e.habitId}|${e.date}`))),
-    db.reviews
-      .toArray()
-      .then((rows) => new Set(rows.map((r) => `${r.periodType}|${r.periodStart}`))),
-    db.itemReflections
-      .toArray()
-      .then((rows) => new Set(rows.map((r) => `${r.subjectType}|${r.subjectId}|${r.date}`))),
-  ]);
+  const [localIds, planDates, entryKeys, reviewKeys, reflectionKeys, budgetKeys, salaryStarts] =
+    await Promise.all([
+      Promise.all(BACKUP_TABLES.map(async (t) => [t, await has(t)] as const)).then(
+        (pairs) => new Map(pairs),
+      ),
+      db.dailyPlans.toArray().then((rows) => new Set(rows.map((p) => p.date))),
+      db.habitEntries.toArray().then((rows) => new Set(rows.map((e) => `${e.habitId}|${e.date}`))),
+      db.reviews
+        .toArray()
+        .then((rows) => new Set(rows.map((r) => `${r.periodType}|${r.periodStart}`))),
+      db.itemReflections
+        .toArray()
+        .then((rows) => new Set(rows.map((r) => `${r.subjectType}|${r.subjectId}|${r.date}`))),
+      db.budgets.toArray().then((rows) => new Set(rows.map((b) => `${b.period}|${b.category}`))),
+      db.salaryRecords.toArray().then((rows) => new Set(rows.map((s) => s.effectiveFrom))),
+    ]);
   const isNew = (table: (typeof BACKUP_TABLES)[number], id: string) =>
     !(localIds.get(table)?.has(id) ?? false);
 
@@ -94,6 +97,12 @@ async function planMerge(data: BackupData): Promise<MergePlan> {
   // A plan or review that already exists here under the same id still accepts its children.
   const planIds = new Set([...(localIds.get('dailyPlans') ?? []), ...dailyPlans.map((p) => p.id)]);
   const reviewIds = new Set([...(localIds.get('reviews') ?? []), ...reviews.map((r) => r.id)]);
+  const accounts = data.accounts.filter((a) => isNew('accounts', a.id));
+  const accountIds = new Set([...(localIds.get('accounts') ?? []), ...accounts.map((a) => a.id)]);
+  // Money records come along only when every account they name is here or being added.
+  const linked = (r: { accountId?: string | undefined; toAccountId?: string | undefined }) =>
+    (r.accountId === undefined || accountIds.has(r.accountId)) &&
+    (r.toAccountId === undefined || accountIds.has(r.toAccountId));
 
   const add: BackupData = {
     settings: data.settings.filter((s) => isNew('settings', s.id)),
@@ -115,6 +124,17 @@ async function planMerge(data: BackupData): Promise<MergePlan> {
         isNew('itemReflections', r.id) &&
         !reflectionKeys.has(`${r.subjectType}|${r.subjectId}|${r.date}`),
     ),
+    financeCategories: data.financeCategories.filter((c) => isNew('financeCategories', c.id)),
+    accounts,
+    financeEntries: data.financeEntries.filter((e) => isNew('financeEntries', e.id) && linked(e)),
+    financeGoals: data.financeGoals.filter((g) => isNew('financeGoals', g.id)),
+    budgets: data.budgets.filter(
+      (b) => isNew('budgets', b.id) && !budgetKeys.has(`${b.period}|${b.category}`),
+    ),
+    salaryRecords: data.salaryRecords.filter(
+      (s) => isNew('salaryRecords', s.id) && !salaryStarts.has(s.effectiveFrom),
+    ),
+    recurringRules: data.recurringRules.filter((r) => isNew('recurringRules', r.id) && linked(r)),
   };
   const total = countRecords(data);
   const added = countRecords(add);

@@ -12,52 +12,63 @@
   isolation: isolate;
 }
 
-/*
- * One column on phones and tablets, ordered for a morning check-in: progress, habits, focus,
- * tasks, then the evening review. The two column wrappers dissolve (display: contents) so
- * their blocks can interleave in that order.
- */
-.today__grid {
+/* One column on every screen, in reading order: overview first, review last. */
+.today__stack {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
-.today__main,
-.today__side {
-  display: contents;
-}
-
+/*
+ * Every section is a panel: same radius, border, and padding, so the page reads as one
+ * system. Each one's identity comes from its icon accent (below), the overview's glow,
+ * the intention's sunken shade, and the review's dusk.
+ */
 .today__block {
+  --accent-bg: var(--color-primary-soft);
+  --accent-fg: var(--color-primary-strong);
   min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
   animation: rise-in 480ms var(--ease-out) backwards;
 }
 
-.today__block--progress {
-  order: 1;
-}
-
-.today__block--habits {
-  order: 2;
+.today__block--money {
+  --accent-bg: var(--color-warm-soft);
+  --accent-fg: var(--color-warm);
   animation-delay: 60ms;
 }
 
-.today__block--intention {
-  order: 3;
+.today__block--priorities {
+  --accent-bg: var(--color-dusk-soft);
+  --accent-fg: var(--color-dusk);
   animation-delay: 120ms;
 }
 
 .today__block--tasks {
-  order: 4;
+  --accent-bg: var(--color-surface-sunken);
+  --accent-fg: var(--color-text);
   animation-delay: 180ms;
 }
 
-.today__block--review {
-  order: 5;
-  animation-delay: 240ms;
+.today__block--intention {
+  --accent-bg: var(--color-surface);
+  --accent-fg: var(--color-text-muted);
+  background: var(--color-surface-sunken);
+  box-shadow: none;
 }
 
-/* Spacing on this page comes from the grid gap, not from section padding. */
+/* The review carries its own dusk card, so its wrapper steps aside. */
+.today__block--review {
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
 .today .section {
   padding: 0;
 }
@@ -66,27 +77,118 @@
   margin-top: var(--space-6);
 }
 
-/*
- * Wide screens: doing on the left (habits, tasks), overview and reflection on the right.
- * The content column widens just for this page.
- */
+/* A hairline under each header marks where a section's content begins. */
+.today__block:not(.today__block--review) .section__header {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.today__block:not(.today__block--review) .section__icon {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+}
+
+.today__block:not(.today__block--review) .section__title {
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+/* Wide screens: the column widens a little for this page, nothing more. */
 @media (min-width: 1100px) {
   .app-main:has(> .today) {
-    max-width: 72rem;
+    max-width: 48rem;
+  }
+}
+
+@media (max-width: 519px) {
+  .today__stack {
+    gap: var(--space-3);
   }
 
-  .today__grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-6);
+  .today__block {
+    padding: var(--space-4);
   }
+}
 
-  .today__main,
-  .today__side {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
+/* ---------- Overview ---------- */
+
+/* Two matching tiles, habits and money, on the page's one elevated surface. */
+.glance {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) + 4px);
+  background: var(--gradient-light), var(--color-surface);
+  box-shadow: var(--shadow-md);
+  animation: rise-in 480ms var(--ease-out) backwards;
+}
+
+.glance__tile {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-glass);
+}
+
+.glance__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.glance__tile--primary .glance__title svg {
+  color: var(--color-primary-strong);
+}
+
+.glance__tile--warm .glance__title svg {
+  color: var(--color-warm);
+}
+
+.glance__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.glance__muted {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.glance__unit {
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.glance__skeleton-chart {
+  height: 52px;
+}
+
+@media (max-width: 419px) {
+  .glance {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -111,7 +213,7 @@
   /* Starts above the page top (clipped by the viewport there), so there's no top edge. */
   inset: calc(-1 * var(--space-7) - var(--safe-top)) 0 auto;
   height: 300px;
-  background: var(--gradient-glow);
+  background: var(--gradient-light);
   /* Fade every edge out so the wash never shows a boundary. */
   -webkit-mask-image: radial-gradient(ellipse 60% 100% at 50% 0%, #000 15%, transparent 75%);
   mask-image: radial-gradient(ellipse 60% 100% at 50% 0%, #000 15%, transparent 75%);
@@ -168,7 +270,7 @@
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .today-header__date {
-    background: var(--gradient-brand);
+    background: var(--gradient-primary-dark);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -200,7 +302,7 @@
   padding: 0 var(--space-4);
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   color: var(--color-on-primary);
   font-weight: 600;
   box-shadow: var(--shadow-filled), var(--shadow-primary);
@@ -248,7 +350,7 @@
   min-width: 20px;
   padding: 0 5px;
   border: 1px solid var(--color-on-dark-line);
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--color-on-dark-fill);
   color: var(--color-on-dark-muted);
   font-family: var(--font-sans);
@@ -314,7 +416,7 @@
   height: 38px;
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-primary);
   cursor: pointer;
@@ -372,165 +474,36 @@
   animation-delay: 160ms;
 }
 
-.today .progress {
-  height: 8px;
-  margin-bottom: var(--space-2);
-}
-
-.task-progress {
-  margin-bottom: var(--space-3);
-}
-
-.task-progress__note {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--color-text-muted);
-  font-size: var(--text-xs);
-}
-
-.task-progress__note--done {
-  color: var(--color-primary-strong);
-  font-weight: 600;
-}
-
-.task-progress__note em,
-.habit-celebrate em {
-  font-family: var(--font-serif);
-  font-weight: 500;
-}
-
-/* All habits done: a small banner rises in beneath the list. */
-@keyframes celebrate-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-  }
-}
-
-.habit-celebrate {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-primary-soft);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(120deg, var(--color-primary-soft), var(--color-warm-soft));
-  color: var(--color-primary-strong);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  animation: celebrate-in 500ms var(--ease-out);
-}
-
-.habit-celebrate__icon {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-warm);
-  box-shadow: var(--shadow-sm);
-}
-
-.today .progress::-webkit-progress-value {
-  background: var(--gradient-brand);
-}
-
-.today .progress::-moz-progress-bar {
-  background: var(--gradient-brand);
-}
-
 /* ---------- Intention and priorities ---------- */
 
-.intention-card {
-  position: relative;
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--color-primary-soft);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(140deg, var(--color-primary-faint), var(--color-surface) 65%);
-  box-shadow: var(--shadow-sm);
-  transition:
-    border-color var(--duration-fast) ease,
-    box-shadow var(--duration) var(--ease-out);
-}
-
-.intention-card:hover {
-  border-color: var(--color-border-strong);
-}
-
-/* The textarea is borderless, so the card shows focus. */
-.intention-card:focus-within {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 0 1px var(--color-primary),
-    0 0 0 4px var(--color-primary-ring);
-}
-
-.intention-card__mark {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-4);
-  color: var(--color-primary-soft);
-  transform: scaleX(-1);
-}
-
-.intention-card .intention-input {
+/* Borderless on the sunken panel; the panel's ring shows focus. */
+.today .section--intention .intention-input {
   display: block;
   width: 100%;
-  padding: 0 var(--space-6) 0 0;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--color-text);
   font-family: var(--font-serif);
-  font-size: max(16px, 1.3rem);
+  font-size: max(16px, 1.2rem);
   font-style: italic;
+  font-weight: 400;
   line-height: 1.45;
   resize: none;
 }
 
-.intention-card .intention-input:focus {
+.today .section--intention .intention-input:focus {
   outline: none;
 }
 
-.intention-card .intention-input::placeholder {
+.today .section--intention .intention-input::placeholder {
   color: var(--color-subtle);
   opacity: 1;
 }
 
-.intention-card__hint {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.outcome-list__rank {
-  flex-shrink: 0;
-  width: 1.1em;
-  color: var(--color-subtle);
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  font-style: italic;
-  text-align: center;
-}
-
-.outcome-list__item--top .outcome-list__rank {
-  color: var(--color-warm);
-  font-weight: 600;
-}
-
-.outcome-list__item--done .outcome-list__rank {
-  color: var(--color-primary);
-}
-
-.outcome-list__item--top {
-  border-color: var(--color-primary-soft);
-  background: linear-gradient(90deg, var(--color-primary-faint), var(--color-surface) 70%);
+.today__block--intention:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
 }
 
 .outcome-list__item--done {
@@ -549,7 +522,7 @@
   padding: var(--space-5);
   overflow: hidden;
   border-radius: calc(var(--radius-lg) + 4px);
-  background: var(--gradient-dusk);
+  background: var(--gradient-primary-dark);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-lg);
 }
@@ -747,7 +720,7 @@
   padding: 1px 6px;
   border: 1px solid var(--color-border-strong);
   border-bottom-width: 2px;
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--color-surface);
   color: var(--color-text);
   font-family: var(--font-sans);
@@ -781,8 +754,9 @@
       }
     }
 
-    .today__block--intention,
+    .today__block--priorities,
     .today__block--tasks,
+    .today__block--intention,
     .today__block--review {
       animation: reveal linear both;
       animation-delay: 0s;

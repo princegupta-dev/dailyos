@@ -15,24 +15,31 @@ beforeEach(async () => {
 });
 
 describe('daily intention and outcomes', () => {
-  it('saves the intention and outcomes, then ticks an outcome off', async () => {
+  it('saves the intention and priorities separately, then ticks a priority off', async () => {
     const user = userEvent.setup();
     renderApp('/');
 
     await user.type(await screen.findByLabelText('Today’s intention'), 'Calm, focused, kind');
+    await user.click(screen.getByRole('button', { name: 'Save intention' }));
+    expect(await screen.findByText('Intention saved')).toBeInTheDocument();
+    await waitFor(async () => {
+      expect((await getPlan(today()))?.intention).toBe('Calm, focused, kind');
+    });
+
     await user.type(screen.getByLabelText('Priority 1'), 'Finish chapter draft');
     await user.type(screen.getByLabelText('Priority 2'), 'Run 5k');
-    await user.click(screen.getByRole('button', { name: 'Save plan' }));
+    await user.click(screen.getByRole('button', { name: 'Save priorities' }));
 
-    expect(await screen.findByText('Plan saved')).toBeInTheDocument();
+    expect(await screen.findByText('Priorities saved')).toBeInTheDocument();
     await waitFor(async () => {
       expect((await getPlan(today()))?.topOutcomes.map((o) => o.text)).toEqual([
         'Finish chapter draft',
         'Run 5k',
       ]);
     });
+    // Saving one part leaves the other untouched.
     expect((await getPlan(today()))?.intention).toBe('Calm, focused, kind');
-    expect(screen.queryByRole('button', { name: 'Save plan' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save priorities' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('checkbox', { name: 'Priority 1 done' }));
     expect(await screen.findByText('1 of 2 done')).toBeInTheDocument();

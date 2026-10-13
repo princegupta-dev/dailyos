@@ -37,6 +37,7 @@ import { formatDateKey } from '@/lib/dates';
 import { getDailySummary, getRangeReport } from '@/services/analytics.service';
 import { PERIOD_BADGE, reviewPath } from './format';
 import { ItemReflections } from './ItemReflections';
+import { MoneyReport } from './MoneyReport';
 import { OpenActionsList } from './OpenActionsList';
 import { ReviewForm } from './ReviewForm';
 import { DailySummaryView, RangeSummaryView } from './SummaryViews';
@@ -213,6 +214,8 @@ function ReviewPeriodView({
           ) : (
             <RangeReportSection period={period} today={today} weekStartsOn={weekStartsOn} />
           )}
+
+          <MoneyReport period={period} today={today} />
 
           {carried.status === 'ready' && carried.data.length > 0 && (
             <Section

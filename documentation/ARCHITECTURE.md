@@ -148,6 +148,64 @@ lists only the stores it changes.
 - **Editing a saved review:** the form remounts whenever the stored review or its actions
   change, so a later save never resurrects stale action ids or statuses.
 
+### Two trackers, shared tools
+
+DailyOS has two primary modules, side by side in the navigation: the **Habit Tracker**
+(Habits) and the **Expense Tracker** (shown as Investments). Shared tools work across both:
+
+- **Today** has a section for each: habits and tasks, and this month's money with due
+  payments and quick add. Quick capture (C) records a note, a task, or an expense.
+- **Insights** has a Habits / Money / Both switch. Money adds spending patterns by group,
+  income and savings compared with the previous period, money suggestions, and a weekly
+  "Habits & money" table (two columns, never a shared axis).
+- **Reviews** (daily, weekly, monthly) show a money report for the period (budgets and goals
+  for a month) and have a money reflection field (`Review.moneyReflection`).
+- **Backup and restore** cover every finance store; **Settings** has money preferences
+  (default account, emergency fund target in months) and can clear money data on its own.
+
+### Personal finance (Expense Tracker)
+
+- **Stores (schema v7–v9):** `financeEntries` (every money movement), `accounts` (accounts
+  and assets), `financeGoals`, `budgets` (unique `[period+category]`), `salaryRecords`
+  (unique `effectiveFrom`), `financeCategories` (custom categories), and `recurringRules`.
+  v8 converted the v7 `holdings` store into investment accounts with the same ids and v9
+  dropped it; `domain/financeMigration.ts` holds the conversion, used by both the database
+  migration and restoring an older backup, so both produce identical records.
+- **Money is integer paise**, shown as INR with Indian grouping (`lib/money.ts`).
+- **Kinds never overlap:** `income`, `expense`, `investment`, `saving`, `transfer`. Savings and
+  investments can be withdrawals. Each entry may name the account money left (`accountId`)
+  and reached (`toAccountId`); transfers need both. Sides without an account are tracked as
+  "not in an account", so the tracker works with or without accounts.
+- **Accounts & assets** are grouped as bank & cash (savings/current accounts, cash, kitty,
+  wallet), investments (mutual funds, SIPs, FDs/RDs, digital and physical gold, stocks, ETFs,
+  bonds, PPF and schemes) and loans & cards, each with an "Other" type that takes a custom
+  name. An account stores a **balance checkpoint** (`balance` as of the end of `asOf`, entered
+  at `balanceSetAt`); its value is the checkpoint plus entries after it. Updating a balance
+  from a statement just moves the checkpoint, so no bank connection is needed. Investments
+  also keep `invested` (cost) separately, so a new market value shows as gain, never as money
+  added. Bank and cash accounts can hold savings (`savingsPot`). Accounts with history are
+  archived rather than deleted.
+- **Derived, never stored** (`services/finance.service.ts`):
+  - flows: surplus = income − expenses; savings rate = surplus ÷ income; unallocated =
+    surplus − net invested − net saved − debt repaid
+  - a transfer into a loan or card is **debt repaid**: never spending, and card purchases are
+    counted once, when made
+  - net worth = bank & cash + savings + investments − loans & cards
+  - budgets can cover everything, a whole group (`group:<key>`), or one category
+  - goals measure the goal's year up to its deadline, with the elapsed share of time as pace
+- **Expense categories** are groups with subcategories (Home, Family, Transport, Personal,
+  Food, Bills & subscriptions, Health & fitness, Lifestyle & entertainment, Financial, Gifting
+  & celebrations, Other). Custom categories can sit under a group, or be a group of their own
+  with subcategories. Investments, savings, and loan principal are kinds, not expense
+  categories, so they can't inflate spending; loan interest is an expense.
+- **Recurring payments** (weekly, monthly, quarterly, yearly; optional end date and autopay
+  flag) keep the start day of the month (31st → last day). A due payment is recorded (for its
+  amount or a different one) or skipped; "Record all" catches up. Nothing is recorded
+  without the person, so the ledger never changes on its own.
+- **Entries can't be future-dated**, so balances and goals only reflect money that has moved.
+- **Sample data** is opt-in from the empty Investments screen, only into an empty finance
+  section, and can be cleared from Settings without touching anything else.
+
 ### Daily plans
 
 The intention and up to three top outcomes live on the day's `DailyPlan`, which is created on

@@ -98,7 +98,7 @@
 /* The filled part of the rail: --wizard-progress (0 to 1) of its full length. */
 .wizard-steps::after {
   width: calc(100% * 2 / 3 * var(--wizard-progress, 0));
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   transition: width var(--duration-slow) var(--ease-out);
 }
 
@@ -152,7 +152,7 @@
 
 .wizard-steps__step--current .wizard-steps__dot {
   border-color: transparent;
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   color: var(--color-on-primary);
   box-shadow:
     var(--shadow-primary),
@@ -393,7 +393,7 @@ fieldset.wizard-card > legend + * {
   gap: var(--space-4);
   padding: var(--space-3);
   border-radius: var(--radius-lg);
-  background: var(--gradient-glow), var(--color-primary-faint);
+  background: var(--gradient-light), var(--color-primary-faint);
 }
 
 .appearance__stage .wizard-card__hint {
@@ -467,7 +467,7 @@ fieldset.wizard-card > legend + * {
 
 .icon-option:has(input:checked) {
   border-color: var(--color-primary);
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-primary);
 }
@@ -560,7 +560,7 @@ fieldset.wizard-card > legend + * {
 }
 
 .completion-rule__tier--on .completion-rule__icon {
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
 }
 
@@ -685,7 +685,7 @@ fieldset.wizard-card > legend + * {
 }
 
 .schedule-option:has(input:checked) .schedule-option__icon {
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-primary);
 }
@@ -834,7 +834,7 @@ fieldset.wizard-card > legend + * {
 }
 
 .time-option:has(input:checked) .time-option__icon {
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
 }
 
@@ -862,7 +862,7 @@ fieldset.wizard-card > legend + * {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: calc(var(--radius-lg) + 4px);
-  background: var(--gradient-glow), var(--color-surface);
+  background: var(--gradient-light), var(--color-surface);
   box-shadow: var(--shadow-md);
 }
 
@@ -1048,7 +1048,7 @@ fieldset.wizard-card > legend + * {
 
 .wizard-actions__primary {
   min-height: 52px;
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   font-size: var(--text-md);
 }
 

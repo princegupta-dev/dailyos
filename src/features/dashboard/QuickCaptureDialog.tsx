@@ -1,17 +1,23 @@
 import { Zap } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent, type SyntheticEvent } from 'react';
 import { Dialog } from '@/components/Dialog';
-import { TextAreaField, TextField } from '@/components/form';
+import { SelectField, TextAreaField, TextField } from '@/components/form';
 import { SegmentedControl } from '@/components/SegmentedControl';
+import { createFinanceEntry, getFinanceData } from '@/db/repositories/finance';
 import { createLearningEntry } from '@/db/repositories/learning';
 import { createTask } from '@/db/repositories/tasks';
 import { useAction } from '@/hooks/useAction';
+import { useLiveData } from '@/hooks/useLiveData';
+import { useSettings } from '@/hooks/useToday';
+import { parseRupees } from '@/lib/money';
+import { accountOptions, categoryOptions } from '../investments/financeUi';
 
-type Mode = 'note' | 'task';
+type Mode = 'note' | 'task' | 'expense';
 
 const MODES: readonly { value: Mode; label: string }[] = [
   { value: 'note', label: 'Note' },
   { value: 'task', label: 'Task' },
+  { value: 'expense', label: 'Expense' },
 ];
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent);
@@ -25,6 +31,7 @@ interface QuickCaptureDialogProps {
 /**
  * Fastest path to get something out of your head. Learning needs only one sentence; details
  * can be added later from the Learn tab. Tasks go to the inbox unless planned for today.
+ * Expenses need an amount; the category and account can be changed later in Investments.
  */
 export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) {
   const { run, pending } = useAction();
@@ -32,8 +39,17 @@ export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) 
   const [text, setText] = useState('');
   const [topic, setTopic] = useState('');
   const [planToday, setPlanToday] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('groceries');
+  const [account, setAccount] = useState<string | null>(null);
+  const finance = useLiveData(getFinanceData);
+  const settings = useSettings();
   const formRef = useRef<HTMLFormElement>(null);
-  const empty = text.trim() === '';
+  const paise = parseRupees(amount);
+  const empty = mode === 'expense' ? paise === undefined || paise === 0 : text.trim() === '';
+  const accounts = finance.status === 'ready' ? finance.data.accounts : [];
+  const categories = finance.status === 'ready' ? finance.data.categories : [];
+  const paidFrom = account ?? settings?.defaultAccountId ?? '';
 
   // Put the cursor in the main field on open and whenever the capture type changes, so
   // capturing is: open, type, save.
@@ -43,14 +59,27 @@ export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) 
 
   const submit = async (event?: SyntheticEvent) => {
     event?.preventDefault();
-    if (text.trim() === '' || pending) return;
+    if (empty || pending) return;
     const result =
       mode === 'note'
         ? await run(() => createLearningEntry({ content: text, topic }), 'Saved to your journal')
-        : await run(
-            () => createTask({ title: text }, planToday ? { planFor: today } : {}),
-            planToday ? 'Task added to today' : 'Task added to inbox',
-          );
+        : mode === 'task'
+          ? await run(
+              () => createTask({ title: text }, planToday ? { planFor: today } : {}),
+              planToday ? 'Task added to today' : 'Task added to inbox',
+            )
+          : await run(
+              () =>
+                createFinanceEntry({
+                  kind: 'expense',
+                  amount: paise ?? 0,
+                  date: today,
+                  category,
+                  accountId: paidFrom || undefined,
+                  note: text,
+                }),
+              'Expense recorded',
+            );
     if (result.ok) onClose();
   };
 
@@ -72,7 +101,53 @@ export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) 
     >
       <SegmentedControl label="Capture type" value={mode} options={MODES} onChange={setMode} />
       <form ref={formRef} className="form quick-capture" onSubmit={(e) => void submit(e)}>
-        {mode === 'note' ? (
+        {mode === 'expense' ? (
+          <>
+            <div className="form__row">
+              <TextField
+                label="Amount (₹)"
+                inputMode="decimal"
+                value={amount}
+                autoComplete="off"
+                placeholder="0"
+                onKeyDown={onKeyDown}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                }}
+              />
+              <SelectField
+                label="Category"
+                value={category}
+                options={categoryOptions('expense', categories)}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                }}
+              />
+            </div>
+            {accounts.length > 0 && (
+              <SelectField
+                label="Paid from"
+                value={paidFrom}
+                options={accountOptions(accounts, ['cash', 'liability'], { selected: paidFrom })}
+                onChange={(e) => {
+                  setAccount(e.target.value);
+                }}
+              />
+            )}
+            <TextField
+              label="Note"
+              hint="Optional"
+              value={text}
+              maxLength={200}
+              onKeyDown={onKeyDown}
+              autoComplete="off"
+              placeholder="e.g. Lunch with team"
+              onChange={(e) => {
+                setText(e.target.value);
+              }}
+            />
+          </>
+        ) : mode === 'note' ? (
           <>
             <TextAreaField
               label="What did you do or learn?"
@@ -129,8 +204,10 @@ export function QuickCaptureDialog({ today, onClose }: QuickCaptureDialogProps) 
             {empty ? (
               mode === 'note' ? (
                 'Write something to save it.'
-              ) : (
+              ) : mode === 'task' ? (
                 'Name the task to save it.'
+              ) : (
+                'Enter an amount to save it.'
               )
             ) : (
               <>

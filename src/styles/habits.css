@@ -121,7 +121,7 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 7px;
+  border-radius: 5px;
   background: var(--color-primary-soft);
   color: var(--color-primary-strong);
 }
@@ -219,7 +219,7 @@
 }
 
 .habit-insights__dot--completed {
-  background: var(--gradient-brand);
+  background: var(--gradient-primary-dark);
   box-shadow: none;
 }
 
@@ -307,7 +307,7 @@
 }
 
 .habit-add:hover .habit-add__icon {
-  background: var(--gradient-brand);
+  background: var(--gradient-blue);
   color: var(--color-on-primary);
   transform: rotate(90deg);
 }
@@ -433,7 +433,7 @@
   padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: calc(var(--radius-lg) + 4px);
-  background: var(--gradient-glow), var(--color-surface);
+  background: var(--gradient-light), var(--color-surface);
   box-shadow: var(--shadow-md);
 }
 

@@ -1,4 +1,4 @@
-import { PartyPopper, Repeat } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -25,7 +25,7 @@ export function HabitDayList({ date, today }: { date: string; today: string }) {
             <EmptyState
               icon={Repeat}
               title="No habits scheduled today"
-              description="Habits appear here on the days they're scheduled. Unscheduled days never count against you."
+              description="Habits appear here on the days they’re scheduled."
             />
             <Link
               to="/habits/new"
@@ -51,7 +51,6 @@ export function HabitDayList({ date, today }: { date: string; today: string }) {
                 />
               ))}
             </ul>
-            <AllDone items={items} />
             {logging && (
               <HabitLogSheet
                 key={logging.habit.id}
@@ -68,28 +67,5 @@ export function HabitDayList({ date, today }: { date: string; today: string }) {
         )
       }
     </LiveView>
-  );
-}
-
-/**
- * A small celebration once every habit that counts today is done. Skipped habits don't
- * count, so skipping never blocks it. Announced politely when it appears.
- */
-function AllDone({ items }: { items: readonly HabitDayStatus[] }) {
-  const counted = items.filter((i) => i.occurrence.status !== 'skipped');
-  const done = counted.length > 0 && counted.every((i) => i.occurrence.status === 'completed');
-  return (
-    <div role="status" className="habit-celebrate-region">
-      {done && (
-        <p className="habit-celebrate">
-          <span className="habit-celebrate__icon" aria-hidden="true">
-            <PartyPopper size={18} />
-          </span>
-          <span>
-            Every habit done. <em>Lovely, steady work.</em>
-          </span>
-        </p>
-      )}
-    </div>
   );
 }

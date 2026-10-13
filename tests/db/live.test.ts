@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { subscribeLive } from '@/db/live';
+import {
+  createAccount,
+  createFinanceEntry,
+  createRecurring,
+  getFinanceData,
+  saveBudget,
+} from '@/db/repositories/finance';
 import { getReviewForPeriod, listOpenActions, saveReview } from '@/db/repositories/reviews';
 import { periodContaining } from '@/domain/review';
 import { getDailySummary, getRangeReport } from '@/services/analytics.service';
@@ -180,6 +187,33 @@ describe('live queries re-run after writes', () => {
     await createTask({ title: 'Planned' }, { planFor: today() });
     await until(
       () => daily.at(-1)?.counts.planned === 1 && range.at(-1)?.summary.plan.planned === 1,
+    );
+  });
+
+  it('finance reads', async () => {
+    const finance = observe(getFinanceData);
+    await until(() => finance.length === 1);
+
+    const fund = await createAccount({ name: 'Fund', type: 'mutual_fund', balance: 0 });
+    await until(() => finance.at(-1)?.accounts.length === 1);
+
+    await createFinanceEntry({
+      kind: 'investment',
+      amount: 100,
+      date: today(),
+      category: 'mutual_fund',
+      toAccountId: fund.id,
+    });
+    await saveBudget({ period: 'monthly', category: 'all', limit: 1_000 });
+    await createRecurring({
+      entry: { kind: 'expense', amount: 100, date: today(), category: 'ott' },
+      frequency: 'monthly',
+    });
+    await until(
+      () =>
+        finance.at(-1)?.entries.length === 1 &&
+        finance.at(-1)?.budgets.length === 1 &&
+        finance.at(-1)?.recurring.length === 1,
     );
   });
 });
