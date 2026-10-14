@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, Eye, EyeOff, Sprout } from 'lucide-react';
-import { useId, useState, type InputHTMLAttributes, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { useId, useState, type InputHTMLAttributes, type MouseEvent, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate, type LinkProps } from 'react-router';
+import deskPhoto from '@/assets/welcome/desk.jpg';
 import { PASSWORD_RULES } from './credentials';
 
 interface AuthScreenProps {
@@ -17,8 +18,8 @@ interface AuthScreenProps {
 }
 
 /**
- * The frame for sign-in and setup screens: no tab bar, one focused column that becomes a
- * floating card on wider screens.
+ * The frame for sign-in screens: no tab bar, one focused column that becomes a floating card
+ * on wider screens, with the same photo as the Welcome screen.
  */
 export function AuthScreen({
   title,
@@ -32,11 +33,8 @@ export function AuthScreen({
   return (
     <div className="auth">
       <main id="main" className={`auth__card${centered ? ' auth__card--centered' : ''}`}>
-        {back && (
-          <Link to={back.to} className="auth__back icon-button" aria-label={back.label}>
-            <ArrowLeft size={20} aria-hidden="true" />
-          </Link>
-        )}
+        <AuthPhoto />
+        {back && <AuthBackLink to={back.to} label={back.label} />}
         {art}
         {title && (
           <header className="auth__header">
@@ -48,6 +46,53 @@ export function AuthScreen({
         {footer && <footer className="auth__footer">{footer}</footer>}
       </main>
     </div>
+  );
+}
+
+/**
+ * The Welcome screen's desk photo (Cht Gsml on Unsplash, Unsplash License), shared by every
+ * sign-in screen: a faded layer behind the lower-middle of the column. It's bundled so these
+ * screens work offline.
+ */
+export function AuthPhoto() {
+  return <img className="auth__photo" src={deskPhoto} alt="" decoding="async" />;
+}
+
+/** Where the screen was opened from, recorded by AuthLink. */
+function openedFrom(state: unknown): string | undefined {
+  if (typeof state === 'object' && state !== null && 'from' in state) {
+    const { from } = state;
+    if (typeof from === 'string') return from;
+  }
+  return undefined;
+}
+
+/**
+ * A link between sign-in screens. It records where it was followed from, so the next
+ * screen's back arrow can step back through history instead of piling up entries; the
+ * browser's back button and the arrow then always agree. `replace` swaps this screen for
+ * the next one (e.g. Login ↔ Create account), keeping the original way back.
+ */
+export function AuthLink({ replace = false, ...props }: Omit<LinkProps, 'state'>) {
+  const location = useLocation();
+  const from = replace ? openedFrom(location.state) : location.pathname;
+  return <Link {...props} replace={replace} state={from ? { from } : undefined} />;
+}
+
+/** The back arrow: steps back if this screen was opened from `to`, otherwise goes there. */
+function AuthBackLink({ to, label }: { to: string; label: string }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const goBack = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    if (openedFrom(location.state) === to) void navigate(-1);
+    else void navigate(to, { replace: true });
+  };
+  return (
+    <Link to={to} className="auth__back icon-button" aria-label={label} onClick={goBack}>
+      <ArrowLeft size={20} aria-hidden="true" />
+    </Link>
   );
 }
 
@@ -63,7 +108,14 @@ export function AppLogo({ size = 'lg' }: { size?: 'md' | 'lg' }) {
 /** Google's "G", as required on Google sign-in buttons. */
 export function GoogleMark({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+    <svg
+      className="google-mark"
+      width={size}
+      height={size}
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+      focusable="false"
+    >
       <path
         fill="#FFC107"
         d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"
@@ -157,11 +209,34 @@ export function PasswordRules({ password }: { password: string }) {
   );
 }
 
-/** "Don't have an account? Create account" style line under a form. */
-export function AuthSwitch({ prompt, to, label }: { prompt: string; to: string; label: string }) {
+/**
+ * "New to DailyOS? Create account" style line at the bottom of a screen. Switching between
+ * Login and Create account replaces the screen, so back still leads where you came from.
+ */
+export function AuthSwitch({
+  prompt,
+  to,
+  label,
+  replace = false,
+  caps = false,
+}: {
+  prompt: string;
+  to: string;
+  label: string;
+  replace?: boolean;
+  /** Shows the action in small capitals, e.g. "CREATE ACCOUNT". */
+  caps?: boolean;
+}) {
   return (
     <p className="auth-switch">
-      {prompt} <Link to={to}>{label}</Link>
+      {prompt}{' '}
+      <AuthLink
+        to={to}
+        replace={replace}
+        className={`auth-switch__action${caps ? ' auth-switch__action--caps' : ''}`}
+      >
+        {label}
+      </AuthLink>
     </p>
   );
 }

@@ -17,20 +17,23 @@ describe('signing in', () => {
     const { router } = renderApp('/habits', signedOut);
     expect(await screen.findByRole('heading', { level: 1, name: 'DailyOS' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/welcome');
-    expect(screen.getByRole('link', { name: /Continue with Google/ })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Continue with Email/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('link', { name: 'Create Account' })).toHaveAttribute(
+      'href',
+      '/create-account',
+    );
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   });
 
   it('offers exactly Google and email on the method screen', () => {
-    renderApp('/auth', signedOut);
+    renderApp('/login', signedOut);
     const options = screen.getAllByRole('link', { name: /^Continue with/ });
-    expect(options.map((o) => o.getAttribute('href'))).toEqual(['/auth/google', '/auth/sign-in']);
+    expect(options.map((o) => o.getAttribute('href'))).toEqual(['/login/google', '/login/sign-in']);
   });
 
   it('validates the email sign-in form, toggles the password, and signs in', async () => {
     const user = userEvent.setup();
-    const { router } = renderApp('/auth/sign-in', signedOut);
+    const { router } = renderApp('/login/sign-in', signedOut);
 
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(screen.getByText('Enter your email address.')).toBeInTheDocument();
@@ -52,7 +55,7 @@ describe('signing in', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Welcome back, Priya!' }),
     ).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/auth/success');
+    expect(router.state.location.pathname).toBe('/login/success');
     expect(loadSession()?.user.email).toBe('priya.sharma@example.com');
 
     await user.click(screen.getByRole('link', { name: 'Go to dashboard' }));
@@ -61,7 +64,7 @@ describe('signing in', () => {
 
   it('keeps forgot password UI-only', async () => {
     const user = userEvent.setup();
-    renderApp('/auth/sign-in', signedOut);
+    renderApp('/login/sign-in', signedOut);
     await user.click(screen.getByRole('link', { name: 'Forgot password?' }));
     await user.type(await screen.findByLabelText('Email'), 'me@example.com');
     await user.click(screen.getByRole('button', { name: 'Reset password' }));
@@ -72,7 +75,7 @@ describe('signing in', () => {
 
   it('checks the new password rules when creating an account', async () => {
     const user = userEvent.setup();
-    renderApp('/auth/create-account', signedOut);
+    renderApp('/create-account', signedOut);
 
     await user.type(screen.getByLabelText('Name'), 'Ravi Kumar');
     await user.type(screen.getByLabelText('Email'), 'ravi@example.com');
@@ -102,12 +105,70 @@ describe('signing in', () => {
 
   it('signs in with Google through the simulated flow', async () => {
     const user = userEvent.setup();
-    renderApp('/auth/google', signedOut);
+    renderApp('/login/google', signedOut);
     await user.click(screen.getByRole('button', { name: /Continue with Google/ }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'You’re in!' }),
     ).toBeInTheDocument();
     expect(loadSession()?.user.provider).toBe('google');
+  });
+});
+
+describe('sign-in navigation', () => {
+  it('links Login and Create account to each other, and both back arrows lead to Welcome', async () => {
+    const user = userEvent.setup();
+    const { router } = renderApp('/welcome', signedOut);
+
+    await user.click(screen.getByRole('link', { name: 'Login' }));
+    await screen.findByRole('heading', { level: 1, name: 'How would you like to continue?' });
+    expect(router.state.location.pathname).toBe('/login');
+
+    await user.click(screen.getByRole('link', { name: 'Create account' }));
+    await screen.findByRole('heading', { level: 1, name: 'Create your account' });
+    expect(router.state.location.pathname).toBe('/create-account');
+
+    await user.click(screen.getByRole('link', { name: 'Login' }));
+    await screen.findByRole('heading', { level: 1, name: 'How would you like to continue?' });
+
+    await user.click(screen.getByRole('link', { name: 'Back to welcome' }));
+    await screen.findByRole('heading', { level: 1, name: 'DailyOS' });
+    expect(router.state.location.pathname).toBe('/welcome');
+
+    // The arrow stepped back through history, so browser back doesn't return to Login.
+    expect(router.state.historyAction).toBe('POP');
+  });
+
+  it('sends the Create account back arrow to Welcome even when opened directly', async () => {
+    const user = userEvent.setup();
+    const { router } = renderApp('/create-account', signedOut);
+    expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login');
+    await user.click(screen.getByRole('link', { name: 'Back to welcome' }));
+    await screen.findByRole('heading', { level: 1, name: 'DailyOS' });
+    expect(router.state.location.pathname).toBe('/welcome');
+  });
+
+  it('steps back from a sign-in subroute to Login', async () => {
+    const user = userEvent.setup();
+    const { router } = renderApp('/login', signedOut);
+    await user.click(screen.getByRole('link', { name: /Continue with Email/ }));
+    await screen.findByRole('heading', { level: 1, name: 'Welcome back' });
+    expect(router.state.location.pathname).toBe('/login/sign-in');
+    await user.click(screen.getByRole('link', { name: 'Back to login' }));
+    await screen.findByRole('heading', { level: 1, name: 'How would you like to continue?' });
+    expect(router.state.historyAction).toBe('POP');
+  });
+
+  it.each([
+    ['/auth', '/login'],
+    ['/auth/sign-in', '/login/sign-in'],
+    ['/auth/google', '/login/google'],
+    ['/auth/forgot-password', '/login/forgot-password'],
+    ['/auth/create-account', '/create-account'],
+  ])('redirects the old path %s to %s', async (from, to) => {
+    const { router } = renderApp(from, signedOut);
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(to);
+    });
   });
 });
 

@@ -1,4 +1,5 @@
 import { Navigate, Outlet } from 'react-router';
+import { AUTH_ROUTES } from '@/features/auth/authRoutes';
 import { SessionProvider } from '@/features/auth/SessionProvider';
 import { useSession } from '@/features/auth/session-context';
 import { ProfileProvider } from '@/features/profile/ProfileProvider';
@@ -17,7 +18,7 @@ export function SessionRoot() {
 /** Screens that need a signed-in session; anyone else goes to the welcome screen. */
 export function RequireSession() {
   const { session } = useSession();
-  if (!session) return <Navigate to="/welcome" replace />;
+  if (!session) return <Navigate to={AUTH_ROUTES.welcome} replace />;
   return <Outlet />;
 }
 

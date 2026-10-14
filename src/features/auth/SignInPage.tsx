@@ -1,9 +1,10 @@
 import { CircleAlert } from 'lucide-react';
 import { useState, type SyntheticEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { TextField } from '@/components/form';
 import { signInWithEmail } from '@/services/auth.service';
-import { AuthScreen, AuthSwitch, PasswordField, Spinner } from './AuthUi';
+import { AuthLink, AuthScreen, AuthSwitch, PasswordField, Spinner } from './AuthUi';
+import { AUTH_ROUTES } from './authRoutes';
 import { emailError } from './credentials';
 import { useSession } from './session-context';
 
@@ -32,7 +33,7 @@ export function SignInPage() {
     setPending(true);
     try {
       begin(await signInWithEmail(email, password));
-      void navigate('/auth/success', { replace: true });
+      void navigate(AUTH_ROUTES.success, { replace: true });
     } catch (error) {
       setFailure(error instanceof Error ? error.message : 'Couldn’t sign in. Try again.');
       setPending(false);
@@ -43,11 +44,11 @@ export function SignInPage() {
     <AuthScreen
       title="Welcome back"
       subtitle="Sign in to continue to your space."
-      back={{ to: '/auth', label: 'Back to sign-in options' }}
+      back={{ to: AUTH_ROUTES.login, label: 'Back to login' }}
       footer={
         <AuthSwitch
           prompt="Don’t have an account?"
-          to="/auth/create-account"
+          to={AUTH_ROUTES.createAccount}
           label="Create account"
         />
       }
@@ -80,10 +81,10 @@ export function SignInPage() {
             setPassword(e.target.value);
           }}
         />
-        <Link to="/auth/forgot-password" className="auth-forgot">
+        <AuthLink to={AUTH_ROUTES.forgotPassword} className="auth-forgot">
           Forgot password?
-        </Link>
-        <button type="submit" className="button button--primary button--block" disabled={pending}>
+        </AuthLink>
+        <button type="submit" className="button button--gradient button--block" disabled={pending}>
           {pending ? (
             <>
               <Spinner /> Signing in…

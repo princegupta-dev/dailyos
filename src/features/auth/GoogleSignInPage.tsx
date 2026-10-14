@@ -1,8 +1,9 @@
 import { CircleAlert, KeyRound, Lock, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { signInWithGoogle } from '@/services/auth.service';
-import { AuthScreen, GoogleMark, Spinner } from './AuthUi';
+import { AuthLink, AuthScreen, GoogleMark, Spinner } from './AuthUi';
+import { AUTH_ROUTES } from './authRoutes';
 import { useSession } from './session-context';
 
 const BENEFITS: readonly { icon: LucideIcon; text: string }[] = [
@@ -26,7 +27,7 @@ export function GoogleSignInPage() {
     setStatus({ kind: 'connecting' });
     try {
       begin(await signInWithGoogle());
-      void navigate('/auth/success', { replace: true });
+      void navigate(AUTH_ROUTES.success, { replace: true });
     } catch (error) {
       setStatus({
         kind: 'error',
@@ -38,7 +39,7 @@ export function GoogleSignInPage() {
   return (
     <AuthScreen
       centered
-      back={{ to: '/auth', label: 'Back to sign-in options' }}
+      back={{ to: AUTH_ROUTES.login, label: 'Back to login' }}
       art={
         <span className="status-tile status-tile--google" aria-hidden="true">
           <GoogleMark size={40} />
@@ -48,7 +49,10 @@ export function GoogleSignInPage() {
       subtitle="You’ll be redirected to Google to sign in securely."
       footer={
         <p className="auth-switch">
-          Prefer email? <Link to="/auth/sign-in">Sign in with email</Link>
+          Prefer email?{' '}
+          <AuthLink to={AUTH_ROUTES.signIn} replace className="auth-switch__action">
+            Sign in with email
+          </AuthLink>
         </p>
       }
     >
@@ -71,7 +75,7 @@ export function GoogleSignInPage() {
 
       <button
         type="button"
-        className="button button--google button--block"
+        className="button button--gradient button--block"
         disabled={status.kind === 'connecting'}
         onClick={() => void connect()}
       >

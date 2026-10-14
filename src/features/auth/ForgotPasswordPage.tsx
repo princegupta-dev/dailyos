@@ -1,9 +1,9 @@
 import { CircleAlert, KeyRound } from 'lucide-react';
 import { useState, type SyntheticEvent } from 'react';
-import { Link } from 'react-router';
 import { TextField } from '@/components/form';
 import { requestPasswordReset } from '@/services/auth.service';
-import { AuthScreen, Spinner } from './AuthUi';
+import { AuthLink, AuthScreen, Spinner } from './AuthUi';
+import { AUTH_ROUTES } from './authRoutes';
 import { emailError } from './credentials';
 
 /**
@@ -52,12 +52,16 @@ export function ForgotPasswordPage() {
         }
       >
         <div className="auth-actions">
-          <Link to="/auth/sign-in" className="button button--primary button--block">
+          <AuthLink
+            to={AUTH_ROUTES.signIn}
+            replace
+            className="button button--gradient button--block"
+          >
             Back to sign in
-          </Link>
-          <Link to="/auth/google" className="button button--secondary button--block">
+          </AuthLink>
+          <AuthLink to={AUTH_ROUTES.google} className="button button--secondary button--block">
             Continue with Google
-          </Link>
+          </AuthLink>
         </div>
       </AuthScreen>
     );
@@ -67,7 +71,7 @@ export function ForgotPasswordPage() {
     <AuthScreen
       title="Forgot password?"
       subtitle="Enter the email you signed up with and we’ll help you get back in."
-      back={{ to: '/auth/sign-in', label: 'Back to sign in' }}
+      back={{ to: AUTH_ROUTES.signIn, label: 'Back to sign in' }}
     >
       <form className="form" onSubmit={(e) => void submit(e)} noValidate>
         {failure && (
@@ -87,7 +91,7 @@ export function ForgotPasswordPage() {
             setEmail(e.target.value);
           }}
         />
-        <button type="submit" className="button button--primary button--block" disabled={pending}>
+        <button type="submit" className="button button--gradient button--block" disabled={pending}>
           {pending ? (
             <>
               <Spinner /> Checking…

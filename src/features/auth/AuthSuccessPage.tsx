@@ -32,7 +32,7 @@ export function AuthSuccessPage() {
       <div className="auth-actions">
         {needsSetup ? (
           <>
-            <Link to="/onboarding" className="button button--primary button--block">
+            <Link to="/onboarding" className="button button--gradient button--block">
               Continue to profile setup
             </Link>
             <Link to="/" className="link-button link-button--center" onClick={finishProfileSetup}>
@@ -40,7 +40,7 @@ export function AuthSuccessPage() {
             </Link>
           </>
         ) : (
-          <Link to="/" className="button button--primary button--block">
+          <Link to="/" className="button button--gradient button--block">
             Go to dashboard
           </Link>
         )}

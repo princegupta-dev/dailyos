@@ -61,7 +61,7 @@ export default defineConfig({
       },
       workbox: {
         // Precache the whole app shell so it opens with no connection at all.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

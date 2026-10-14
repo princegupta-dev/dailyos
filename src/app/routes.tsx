@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router';
 import { AuthSuccessPage } from '@/features/auth/AuthSuccessPage';
+import { AUTH_ROUTES, LEGACY_AUTH_REDIRECTS } from '@/features/auth/authRoutes';
 import { ChooseMethodPage } from '@/features/auth/ChooseMethodPage';
 import { CreateAccountPage } from '@/features/auth/CreateAccountPage';
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
@@ -54,17 +55,22 @@ export const routes: RouteObject[] = [
     children: [
       {
         element: <SignedOutOnly />,
-        children: [{ path: 'welcome', element: <WelcomePage /> }],
+        children: [{ path: AUTH_ROUTES.welcome, element: <WelcomePage /> }],
       },
-      { path: 'auth', element: <ChooseMethodPage /> },
-      { path: 'auth/sign-in', element: <SignInPage /> },
-      { path: 'auth/create-account', element: <CreateAccountPage /> },
-      { path: 'auth/forgot-password', element: <ForgotPasswordPage /> },
-      { path: 'auth/google', element: <GoogleSignInPage /> },
+      { path: AUTH_ROUTES.login, element: <ChooseMethodPage /> },
+      { path: AUTH_ROUTES.signIn, element: <SignInPage /> },
+      { path: AUTH_ROUTES.google, element: <GoogleSignInPage /> },
+      { path: AUTH_ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
+      { path: AUTH_ROUTES.createAccount, element: <CreateAccountPage /> },
+      // Sign-in screens used to live under /auth; keep old links working.
+      ...LEGACY_AUTH_REDIRECTS.map(([path, to]) => ({
+        path,
+        element: <Navigate to={to} replace />,
+      })),
       {
         element: <RequireSession />,
         children: [
-          { path: 'auth/success', element: <AuthSuccessPage /> },
+          { path: AUTH_ROUTES.success, element: <AuthSuccessPage /> },
           { path: 'onboarding', element: <ProfileSetupPage /> },
           {
             path: '/',

@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef, useState, type SyntheticEvent } from 're
 import { useNavigate } from 'react-router';
 import { ToastContext } from '@/components/toast-context';
 import { hasErrors, summarizeSection, type FieldErrors } from '@/domain/profile';
+import { AUTH_ROUTES } from '../auth/authRoutes';
 import { useSession } from '../auth/session-context';
 import { useProfile } from '../profile/profile-context';
 import { SectionEditor } from '../profile/ProfileFields';
@@ -61,7 +62,7 @@ export function ProfileSetupPage() {
 
   const back = () => {
     if (step === 0) {
-      void navigate('/auth/success');
+      void navigate(AUTH_ROUTES.success);
       return;
     }
     if (fromReview) {

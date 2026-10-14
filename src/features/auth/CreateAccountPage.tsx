@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { TextField } from '@/components/form';
 import { createAccount } from '@/services/auth.service';
 import { AuthScreen, AuthSwitch, PasswordField, PasswordRules, Spinner } from './AuthUi';
+import { AUTH_ROUTES } from './authRoutes';
 import { confirmPasswordError, emailError, newPasswordError } from './credentials';
 import { useSession } from './session-context';
 
@@ -41,7 +42,7 @@ export function CreateAccountPage() {
     setPending(true);
     try {
       begin(await createAccount(values));
-      void navigate('/auth/success', { replace: true });
+      void navigate(AUTH_ROUTES.success, { replace: true });
     } catch (error) {
       setFailure(error instanceof Error ? error.message : 'Couldn’t create your account.');
       setPending(false);
@@ -52,8 +53,16 @@ export function CreateAccountPage() {
     <AuthScreen
       title="Create your account"
       subtitle="Let’s get you started with DailyOS."
-      back={{ to: '/auth/sign-in', label: 'Back to sign in' }}
-      footer={<AuthSwitch prompt="Already have an account?" to="/auth/sign-in" label="Sign in" />}
+      back={{ to: AUTH_ROUTES.welcome, label: 'Back to welcome' }}
+      footer={
+        <AuthSwitch
+          prompt="Already have an account?"
+          to={AUTH_ROUTES.login}
+          label="Login"
+          caps
+          replace
+        />
+      }
     >
       <form className="form" onSubmit={(e) => void submit(e)} noValidate>
         {failure && (
@@ -98,7 +107,7 @@ export function CreateAccountPage() {
           error={errors.confirm}
           onChange={set('confirm')}
         />
-        <button type="submit" className="button button--primary button--block" disabled={pending}>
+        <button type="submit" className="button button--gradient button--block" disabled={pending}>
           {pending ? (
             <>
               <Spinner /> Creating account…

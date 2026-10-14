@@ -17,6 +17,7 @@ import { Section } from '@/components/Section';
 import { summarizeSection } from '@/domain/profile';
 import { useToday } from '@/hooks/useToday';
 import { formatDateKey } from '@/lib/dates';
+import { AUTH_ROUTES } from '../auth/authRoutes';
 import { useSession } from '../auth/session-context';
 import { SettingsCard, SettingsLinkRow } from '../settings/SettingsRow';
 import { useProfile } from './profile-context';
@@ -35,7 +36,7 @@ export function ProfilePage() {
   const logOut = async () => {
     setLoggingOut(true);
     await end();
-    void navigate('/welcome', { replace: true });
+    void navigate(AUTH_ROUTES.welcome, { replace: true });
   };
 
   return (
