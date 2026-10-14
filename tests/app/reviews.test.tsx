@@ -99,7 +99,7 @@ describe('daily review', () => {
     });
     expect(await db.reviews.toArray()).toMatchObject([{ focus: 'Docs first thing' }]);
 
-    await user.click(screen.getByRole('link', { name: 'Today' }));
+    await user.click(screen.getByRole('link', { name: 'Dashboard' }));
     const evening = await screen.findByRole('region', { name: 'Evening review' });
     expect(await within(evening).findByText('Ask Sam for review')).toBeInTheDocument();
     expect(

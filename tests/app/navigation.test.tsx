@@ -9,19 +9,19 @@ beforeEach(async () => {
 });
 
 describe('app navigation', () => {
-  it('shows the five primary destinations with Today active by default', () => {
+  it('shows the five primary destinations with Dashboard active by default', () => {
     renderAt('/');
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     const links = within(nav).getAllByRole('link');
 
     expect(links.map((l) => l.textContent)).toEqual([
-      'Today',
-      'Habits',
+      'Dashboard',
+      'Commitments',
       'Investments',
-      'Insights',
-      'Review',
+      'Settings',
+      'Profile',
     ]);
-    expect(within(nav).getByRole('link', { name: 'Today' })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -32,52 +32,90 @@ describe('app navigation', () => {
     renderAt('/');
     const nav = screen.getByRole('navigation', { name: 'Primary' });
 
-    await user.click(within(nav).getByRole('link', { name: 'Habits' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Habits' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Habits' })).toHaveAttribute(
+    await user.click(within(nav).getByRole('link', { name: 'Commitments' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Commitments' }),
+    ).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Commitments' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    expect(within(nav).getByRole('link', { name: 'Today' })).not.toHaveAttribute('aria-current');
+    expect(within(nav).getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute(
+      'aria-current',
+    );
 
-    await user.click(within(nav).getByRole('link', { name: 'Insights' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Insights' })).toBeInTheDocument();
+    await user.click(within(nav).getByRole('link', { name: 'Investments' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Investments' }),
+    ).toBeInTheDocument();
 
-    await user.click(within(nav).getByRole('link', { name: 'Review' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Review' })).toBeInTheDocument();
+    await user.click(within(nav).getByRole('link', { name: 'Settings' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+
+    await user.click(within(nav).getByRole('link', { name: 'Profile' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Profile' })).toBeInTheDocument();
   });
 
-  it('keeps Tasks and Learn reachable as secondary screens with their parent tab active', async () => {
+  it('opens each Settings screen with Settings active, and returns to the hub', async () => {
     const user = userEvent.setup();
-    renderAt('/insights');
+    renderAt('/settings');
     const nav = screen.getByRole('navigation', { name: 'Primary' });
+    const screens = [
+      ['Insights', 'Insights'],
+      ['Reviews', 'Review'],
+      ['Tasks', 'Tasks'],
+      ['Open actions', 'Open actions'],
+      ['Learnings', 'Learn'],
+      ['Intentions & priorities', 'Intentions & priorities'],
+    ] as const;
 
-    await user.click(await screen.findByRole('link', { name: /Notes and learning/ }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Learn' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Insights' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-
-    await user.click(within(nav).getByRole('link', { name: 'Insights' }));
-    await user.click(await screen.findByRole('link', { name: /^Tasks/ }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Tasks' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Today' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    for (const [row, heading] of screens) {
+      await user.click(screen.getByRole('link', { name: new RegExp(`^${row}`) }));
+      expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+      expect(within(nav).getByRole('link', { name: 'Settings' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      await user.click(screen.getByRole('link', { name: 'Back to Settings' }));
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Settings' }),
+      ).toBeInTheDocument();
+    }
   });
 
-  it('reaches Settings from Today and returns', async () => {
+  it('opens each Profile screen and returns to Profile', async () => {
+    const user = userEvent.setup();
+    renderAt('/profile');
+    expect(screen.getByRole('link', { name: /^App preferences/ })).toHaveAttribute(
+      'href',
+      '/profile/preferences',
+    );
+
+    for (const [row, heading] of [
+      ['Personal information', 'Personal information'],
+      ['Health & wellness', 'Health & wellness'],
+      ['Professional information', 'Professional information'],
+      ['Lifestyle & preferences', 'Lifestyle & preferences'],
+      ['App preferences', 'App preferences'],
+      ['Data & privacy', 'Data & privacy'],
+      ['Account & security', 'Account & security'],
+      ['Help & support', 'Help & support'],
+      ['About', 'About'],
+    ] as const) {
+      await user.click(screen.getByRole('link', { name: new RegExp(`^${row}`) }));
+      expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+      await user.click(screen.getByRole('link', { name: 'Back to Profile' }));
+      expect(await screen.findByRole('heading', { level: 1, name: 'Profile' })).toBeInTheDocument();
+    }
+  });
+
+  it('reaches Profile from the Dashboard header', async () => {
     const user = userEvent.setup();
     renderAt('/');
 
-    await user.click(screen.getByRole('link', { name: 'Settings' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Manage habits/ })).toHaveAttribute('href', '/habits');
-
-    await user.click(screen.getByRole('link', { name: 'Back to Today' }));
-    expect(await screen.findByRole('region', { name: 'Habits' })).toBeInTheDocument();
+    const header = screen.getByRole('banner');
+    await user.click(within(header).getByRole('link', { name: 'Profile' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Profile' })).toBeInTheDocument();
   });
 
   it('redirects old habit links from Settings to the Habits screens', async () => {

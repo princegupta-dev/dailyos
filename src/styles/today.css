@@ -336,14 +336,6 @@
   backdrop-filter: blur(8px);
 }
 
-.today-header__settings svg {
-  transition: transform var(--duration-slow) var(--ease-out);
-}
-
-.today-header__settings:hover svg {
-  transform: rotate(60deg);
-}
-
 /* The shortcut hint shows only where there's a keyboard and room for it. */
 .today-header__shortcut {
   display: none;
@@ -476,13 +468,15 @@
 
 /* ---------- Intention and priorities ---------- */
 
-/* Borderless on the sunken panel; the panel's ring shows focus. */
+/* Borderless on the sunken panel (no field chrome); the panel's ring shows focus. */
 .today .section--intention .intention-input {
   display: block;
   width: 100%;
+  min-height: 0;
   padding: 0;
   border: none;
   background: transparent;
+  box-shadow: none;
   color: var(--color-text);
   font-family: var(--font-serif);
   font-size: max(16px, 1.2rem);
@@ -494,6 +488,7 @@
 
 .today .section--intention .intention-input:focus {
   outline: none;
+  box-shadow: none;
 }
 
 .today .section--intention .intention-input::placeholder {

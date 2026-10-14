@@ -33,7 +33,8 @@ describe('learning capture', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Saved to your journal')).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: 'Insights' }));
+    await user.click(screen.getByRole('link', { name: 'Settings' }));
+    await user.click(await screen.findByRole('link', { name: /^Insights/ }));
     const recent = await screen.findByRole('region', { name: 'Recent learning' });
     expect(
       await within(recent).findByText('Native dialog traps focus for free'),

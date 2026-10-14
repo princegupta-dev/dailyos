@@ -1,11 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './session';
 
 test('installs for offline use and keeps working without a connection', async ({
   page,
   context,
 }) => {
   await page.goto('/habits');
-  await expect(page.getByRole('heading', { level: 1, name: 'Habits' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Commitments' })).toBeVisible();
   // The service worker precaches the app shell, then controls the page after a reload.
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;

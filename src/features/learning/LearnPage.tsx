@@ -27,6 +27,7 @@ import { useLiveData } from '@/hooks/useLiveData';
 import { useToday, useWeekStartsOn } from '@/hooks/useToday';
 import { formatDateKey } from '@/lib/dates';
 import { inlineDayLabel } from '@/lib/format';
+import { BackLink } from '@/components/BackLink';
 import { capturesByWeek, topicCounts, topicTone } from './learningInsights';
 import { LearningListItem } from './LearningListItem';
 
@@ -84,6 +85,7 @@ export function LearnPage() {
   return (
     <div className="learn-page">
       <PageHero
+        leading={<BackLink to="/settings" label="Back to Settings" />}
         eyebrow="Your knowledge journal"
         title="Learn"
         subtitle={

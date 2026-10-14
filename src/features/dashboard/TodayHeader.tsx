@@ -1,4 +1,4 @@
-import { Moon, PenLine, Settings, Sun, Sunrise, Sunset, type LucideIcon } from 'lucide-react';
+import { Moon, PenLine, Sun, Sunrise, Sunset, UserRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router';
 import { useDayPart, type DayPart } from '@/hooks/useDayPart';
@@ -38,7 +38,7 @@ interface TodayHeaderProps {
 }
 
 /**
- * Greeting, the date as the page title, and the capture and settings actions. Once the
+ * Greeting, the date as the page title, and the capture and profile actions. Once the
  * header scrolls away, a compact frosted bar keeps the date and capture within reach.
  */
 export function TodayHeader({ today, onCapture }: TodayHeaderProps) {
@@ -84,12 +84,12 @@ export function TodayHeader({ today, onCapture }: TodayHeaderProps) {
             </kbd>
           </button>
           <Link
-            to="/settings"
+            to="/profile"
             className="icon-button today-header__settings"
-            aria-label="Settings"
-            title="Settings"
+            aria-label="Profile"
+            title="Profile"
           >
-            <Settings size={20} aria-hidden="true" />
+            <UserRound size={20} aria-hidden="true" />
           </Link>
         </div>
       </header>

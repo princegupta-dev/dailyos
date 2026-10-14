@@ -1,11 +1,4 @@
-import {
-  ChartNoAxesColumn,
-  CircleCheckBig,
-  House,
-  NotebookPen,
-  Wallet,
-  type LucideIcon,
-} from 'lucide-react';
+import { CircleCheckBig, House, Settings, UserRound, Wallet, type LucideIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 
 interface NavItem {
@@ -17,16 +10,22 @@ interface NavItem {
 }
 
 /**
- * Five primary destinations. The two trackers, Habits and Investments (the Expense Tracker),
- * sit side by side next to Today; Insights and Review work across both. Secondary screens keep their parent highlighted: Tasks is
- * reached from Today, Learn from Insights, Settings from Today.
+ * Five primary destinations. Dashboard is the day; Commitments (habits) and Investments
+ * (money) are the two trackers. Settings gathers reflection: insights, reviews, tasks,
+ * learnings, and focus, so their screens keep Settings highlighted. Profile holds app
+ * preferences and data.
  */
 const NAV_ITEMS: readonly NavItem[] = [
-  { to: '/', label: 'Today', icon: House, matches: ['/tasks', '/settings'] },
-  { to: '/habits', label: 'Habits', icon: CircleCheckBig, matches: ['/habits'] },
+  { to: '/', label: 'Dashboard', icon: House, matches: [] },
+  { to: '/habits', label: 'Commitments', icon: CircleCheckBig, matches: ['/habits'] },
   { to: '/investments', label: 'Investments', icon: Wallet, matches: ['/investments'] },
-  { to: '/insights', label: 'Insights', icon: ChartNoAxesColumn, matches: ['/insights', '/learn'] },
-  { to: '/review', label: 'Review', icon: NotebookPen, matches: ['/review'] },
+  {
+    to: '/settings',
+    label: 'Settings',
+    icon: Settings,
+    matches: ['/settings', '/insights', '/review', '/tasks', '/learn'],
+  },
+  { to: '/profile', label: 'Profile', icon: UserRound, matches: ['/profile'] },
 ];
 
 function isActive(item: NavItem, pathname: string): boolean {
@@ -36,7 +35,7 @@ function isActive(item: NavItem, pathname: string): boolean {
 
 /**
  * The app's tab bar: docked to the bottom on phones, a side rail on wider screens. The active
- * tab's icon sits in a brand-gradient pill that grows in when the tab is chosen.
+ * tab's icon sits in a dark-gradient pill that grows in when the tab is chosen.
  */
 export function BottomNav() {
   const { pathname } = useLocation();

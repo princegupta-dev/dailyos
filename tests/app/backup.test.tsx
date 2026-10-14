@@ -32,11 +32,11 @@ afterEach(() => {
 const backupFile = async (name = 'dailyos-backup-2026-10-02.json') =>
   new File([JSON.stringify(await exportBackup())], name, { type: 'application/json' });
 
-describe('backup and restore in Settings', () => {
+describe('backup and restore in Profile', () => {
   it('downloads a complete backup and remembers when', async () => {
     await createHabit({ name: 'Read', frequency: 'daily' });
     const user = userEvent.setup();
-    renderApp('/settings');
+    renderApp('/profile/data');
 
     expect(await screen.findByText('No backup downloaded yet.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Download backup' }));
@@ -58,7 +58,7 @@ describe('backup and restore in Settings', () => {
     await createTask({ title: 'Kept task' });
 
     const user = userEvent.setup();
-    renderApp('/settings');
+    renderApp('/profile/data');
     await user.upload(await screen.findByLabelText('Restore from file'), file);
 
     const preview = await screen.findByRole('region', { name: 'Backup preview' });
@@ -78,7 +78,7 @@ describe('backup and restore in Settings', () => {
     await createHabit({ name: 'On this device', frequency: 'daily' });
 
     const user = userEvent.setup();
-    renderApp('/settings');
+    renderApp('/profile/data');
     await user.upload(await screen.findByLabelText('Restore from file'), file);
     const preview = await screen.findByRole('region', { name: 'Backup preview' });
     await user.click(within(preview).getByRole('radio', { name: /Replace everything/ }));
@@ -98,7 +98,7 @@ describe('backup and restore in Settings', () => {
   it('explains why a file was rejected and changes nothing', async () => {
     await createHabit({ name: 'Read', frequency: 'daily' });
     const user = userEvent.setup();
-    renderApp('/settings');
+    renderApp('/profile/data');
 
     const bad = new File(['{"format":"something-else"}'], 'notes.json', {
       type: 'application/json',

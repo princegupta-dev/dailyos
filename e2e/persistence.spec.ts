@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './session';
 
 test('tasks persist in IndexedDB across a full page reload', async ({ page }) => {
   await page.goto('/tasks/new');

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './session';
 
 test('a downloaded backup restores everything after the browser data is wiped', async ({
   page,
@@ -15,7 +15,7 @@ test('a downloaded backup restores everything after the browser data is wiped', 
   await page.getByRole('checkbox', { name: 'Mark Read 20 pages done' }).click();
   await expect(page.getByRole('checkbox', { name: 'Mark Read 20 pages done' })).toBeChecked();
 
-  await page.goto('/settings');
+  await page.goto('/profile/data');
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup' }).click();
   const download = await downloading;
@@ -43,7 +43,7 @@ test('a downloaded backup restores everything after the browser data is wiped', 
   await page.goto('/habits');
   await expect(page.getByText('No habits yet')).toBeVisible();
 
-  await page.goto('/settings');
+  await page.goto('/profile/data');
   await page.getByLabel('Restore from file').setInputFiles(backupPath);
   const preview = page.getByRole('region', { name: 'Backup preview' });
   await expect(preview).toContainText('Habits');

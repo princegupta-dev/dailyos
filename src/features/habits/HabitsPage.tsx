@@ -51,7 +51,7 @@ export function HabitsPage() {
           day: 'numeric',
           month: 'long',
         })}
-        title="Habits"
+        title="Commitments"
         subtitle={
           <>
             Small actions, <em>repeated</em>.

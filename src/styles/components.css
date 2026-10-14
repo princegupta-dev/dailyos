@@ -3569,6 +3569,26 @@ html {
   transition: transform var(--duration) var(--ease-out);
 }
 
+/* Longer labels (Commitments, Investments) still fit five across on narrow phones. */
+@media (max-width: 479px) {
+  .bottom-nav__list {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .bottom-nav__link {
+    min-width: 0;
+  }
+
+  .bottom-nav__label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 .bottom-nav__link:hover {
   color: var(--color-text);
   text-decoration: none;
@@ -6859,6 +6879,16 @@ button.calendar__day:active {
 
 .page-hero__text {
   min-width: 0;
+}
+
+/* A back link before the title, on screens reached from a hub (Settings, Profile). */
+.page-hero__leading {
+  flex-shrink: 0;
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.page-hero__leading + .page-hero__text {
+  flex: 1;
 }
 
 .page-hero__eyebrow {

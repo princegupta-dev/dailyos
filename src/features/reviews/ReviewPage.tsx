@@ -35,6 +35,7 @@ import {
 import { useLiveData } from '@/hooks/useLiveData';
 import { useToday, useWeekStartsOn } from '@/hooks/useToday';
 import { formatDateKey } from '@/lib/dates';
+import { BackLink } from '@/components/BackLink';
 import { OpenActionsList } from './OpenActionsList';
 import { RatingPips } from './RatingPips';
 import { formatRating, PERIOD_BADGE, plural, reviewPath } from './format';
@@ -120,6 +121,7 @@ export function ReviewPage() {
   return (
     <div className="reviews-page">
       <PageHero
+        leading={<BackLink to="/settings" label="Back to Settings" />}
         eyebrow={formatDateKey(today, undefined, {
           weekday: 'long',
           month: 'long',

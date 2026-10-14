@@ -8,10 +8,18 @@ interface TagInputProps {
   /** Optional suggestions shown as tappable chips. Never applied automatically. */
   suggestions?: readonly string[];
   max?: number;
+  placeholder?: string;
 }
 
 /** Manual tag entry with optional one-tap suggestions. */
-export function TagInput({ label, tags, onChange, suggestions = [], max = 20 }: TagInputProps) {
+export function TagInput({
+  label,
+  tags,
+  onChange,
+  suggestions = [],
+  max = 20,
+  placeholder = 'Add a tag',
+}: TagInputProps) {
   const inputId = useId();
   const [draft, setDraft] = useState('');
   const has = (tag: string) => tags.some((t) => t.toLowerCase() === tag.toLowerCase());
@@ -49,7 +57,7 @@ export function TagInput({ label, tags, onChange, suggestions = [], max = 20 }: 
         <input
           id={inputId}
           className="input"
-          placeholder="Add a tag"
+          placeholder={placeholder}
           value={draft}
           maxLength={40}
           autoComplete="off"

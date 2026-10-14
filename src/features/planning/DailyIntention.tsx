@@ -113,7 +113,7 @@ function IntentionForm({ date, plan }: { date: string; plan: DailyPlan | undefin
         </label>
         <textarea
           id="daily-intention"
-          className="intention-input"
+          className="input intention-input"
           rows={2}
           maxLength={500}
           placeholder="One line to set the tone for today…"

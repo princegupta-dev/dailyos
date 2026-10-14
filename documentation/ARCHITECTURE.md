@@ -35,6 +35,22 @@ updating. Read functions therefore call Dexie directly, without wrappers, and ta
 `today` as parameters instead of looking them up. `tests/db/live.test.ts` subscribes to every
 read used by the UI and fails if any of them stops re-emitting after a write.
 
+## Sign-in and profile (frontend only, for now)
+
+Sign-in (Google or email and password), profile setup, and the profile itself are built as UI
+over mock data, ready for a real service later:
+
+- `src/services/auth.service.ts` is the only place sign-in happens. Every function simulates the
+  real call and resolves with a `Session`. Replacing these with real Google OAuth and email auth
+  needn't touch any screen. The session is remembered in `localStorage` purely for the demo.
+- `src/domain/profile.ts` holds the profile's types, options, validation, and sample data. The
+  profile itself lives in memory (`features/profile/ProfileProvider`), not in IndexedDB, until its
+  storage and sync are designed.
+- `src/app/SessionRoot.tsx` provides both to every route. `RequireSession` sends signed-out
+  visitors to `/welcome`. Logging out ends the session and resets the in-memory profile; data on
+  the device (IndexedDB) is left untouched, since what happens to offline data on logout is still
+  to be decided.
+
 ## Source layout
 
 | Path             | Contents                                                    |

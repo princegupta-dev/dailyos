@@ -91,6 +91,8 @@ interface ConfirmDialogProps {
   title: string;
   message: ReactNode;
   confirmLabel: string;
+  /** Defaults to "Keep as is". */
+  cancelLabel?: string;
   destructive?: boolean;
   pending?: boolean;
   onConfirm: () => void;
@@ -102,6 +104,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  cancelLabel = 'Keep as is',
   destructive = false,
   pending = false,
   onConfirm,
@@ -115,7 +118,7 @@ export function ConfirmDialog({
       footer={
         <>
           <button type="button" className="button button--secondary" onClick={onCancel}>
-            Keep as is
+            {cancelLabel}
           </button>
           <button
             type="button"

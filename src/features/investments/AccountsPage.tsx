@@ -225,8 +225,8 @@ export function AccountsPage() {
                     </>
                   )}
                 </p>
-                <Link to="/settings" className="emergency__settings">
-                  Change the target in Settings
+                <Link to="/profile/preferences" className="emergency__settings">
+                  Change the target in Preferences
                 </Link>
               </div>
             )}

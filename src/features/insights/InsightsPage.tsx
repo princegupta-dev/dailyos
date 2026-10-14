@@ -12,6 +12,7 @@ import { useSettings, useToday, useWeekStartsOn } from '@/hooks/useToday';
 import { addDays, startOfWeek } from '@/lib/dates';
 import { getRangeReport } from '@/services/analytics.service';
 import { isFinanceEmpty } from '@/services/finance.service';
+import { BackLink } from '@/components/BackLink';
 import { RecentLearning } from '../learning/RecentLearning';
 import { TasksCard, TrendCard, WeekdayCard } from './InsightCharts';
 import {
@@ -103,6 +104,7 @@ export function InsightsPage() {
   return (
     <div className="insights-page">
       <PageHero
+        leading={<BackLink to="/settings" label="Back to Settings" />}
         eyebrow="Your patterns"
         title="Insights"
         subtitle={

@@ -8,6 +8,7 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { listTasks, type TaskFilter } from '@/db/repositories/tasks';
 import { useLiveData } from '@/hooks/useLiveData';
 import { useToday } from '@/hooks/useToday';
+import { BackLink } from '@/components/BackLink';
 import { TaskRow } from './TaskRow';
 import { useToggleTask } from './useToggleTask';
 
@@ -64,6 +65,7 @@ export function TasksPage() {
     <>
       <PageHeader
         title="Tasks"
+        leading={<BackLink to="/settings" label="Back to Settings" />}
         actions={
           <Link to="/tasks/new" className="button button--primary button--compact">
             <Plus size={18} aria-hidden="true" />

@@ -29,6 +29,20 @@ export function getPlan(date: string): Promise<DailyPlan | undefined> {
   return db.dailyPlans.where('date').equals(date).first();
 }
 
+/**
+ * Plans dated before `before` that set an intention or priorities, newest first. Days with
+ * an empty plan (one only made to hold tasks) are skipped.
+ */
+export async function listPastFocus(before: string, limit: number): Promise<DailyPlan[]> {
+  return db.dailyPlans
+    .where('date')
+    .below(before)
+    .reverse()
+    .filter((p) => p.intention.trim() !== '' || p.topOutcomes.length > 0)
+    .limit(limit)
+    .toArray();
+}
+
 export interface DayPlanEntry {
   item: PlanItem;
   task: Task;

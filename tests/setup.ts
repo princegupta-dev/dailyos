@@ -42,6 +42,33 @@ class JsdomRequest extends NativeRequest {
 }
 globalThis.Request = JsdomRequest;
 
+/*
+ * Newer Node versions define their own global localStorage, which shadows jsdom's and is
+ * unusable without a backing file. Give tests a plain in-memory Storage instead.
+ */
+const existing = (globalThis as { localStorage?: Partial<Storage> }).localStorage;
+if (typeof existing?.clear !== 'function') {
+  const store = new Map<string, string>();
+  const memoryStorage: Storage = {
+    get length() {
+      return store.size;
+    },
+    clear: () => {
+      store.clear();
+    },
+    getItem: (key) => store.get(key) ?? null,
+    key: (index) => [...store.keys()][index] ?? null,
+    removeItem: (key) => {
+      store.delete(key);
+    },
+    setItem: (key, value) => {
+      store.set(key, value);
+    },
+  };
+  Object.defineProperty(globalThis, 'localStorage', { value: memoryStorage, configurable: true });
+}
+
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });

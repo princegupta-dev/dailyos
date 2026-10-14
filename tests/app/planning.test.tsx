@@ -60,7 +60,7 @@ describe('daily intention and outcomes', () => {
 describe('date and time settings', () => {
   it('saves the week start and time zone preferences', async () => {
     const user = userEvent.setup();
-    renderApp('/settings');
+    renderApp('/profile/preferences');
     await user.selectOptions(await screen.findByLabelText('Week starts on'), '0');
     await waitFor(async () => {
       expect((await getSettings()).weekStartsOn).toBe(0);
